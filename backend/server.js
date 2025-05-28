@@ -1,22 +1,31 @@
+// library imports
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
+// middlewares imports
+import requestLogger from "./middlewares/requestLogger.js";
+
+// imported routes
+import authRoutes from "./routes/auth.route.js";
+import protectedRoutes from "./routes/protected.route.js";
 import providerRoutes from "./routes/provider.route.js";
 
 dotenv.config();
-
 const app = express();
 app.use(express.json());
 
+// middlewares
+app.use(requestLogger);
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/protected", protectedRoutes);
 app.use("/api/providers", providerRoutes);
 
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ Connected to MongoDB");
     app.listen(process.env.PORT, () => {
@@ -26,3 +35,5 @@ mongoose
   .catch((err) => {
     console.error("❌ MongoDB connection error:", err.message);
   });
+
+export default app;
