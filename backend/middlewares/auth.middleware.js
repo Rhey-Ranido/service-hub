@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 export const protect = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -20,4 +21,26 @@ export const restrictTo = (...roles) => {
     }
     next();
   };
+};
+
+// controllers/auth.controller.js
+export const getMe = async (req, res) => {
+  if (!req.user?.id) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+    });
+  } catch (err) {
+    console.error("Error in getMe:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
