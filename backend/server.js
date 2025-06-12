@@ -10,6 +10,7 @@ import requestLogger from "./middlewares/requestLogger.js";
 import authRoutes from "./routes/auth.route.js";
 import protectedRoutes from "./routes/protected.route.js";
 import providerRoutes from "./routes/provider.route.js";
+import serviceRoutes from "./routes/service.route.js";
 
 dotenv.config();
 const app = express();
@@ -22,6 +23,7 @@ app.use(requestLogger);
 app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
 app.use("/api/providers", providerRoutes);
+app.use("/api/services", serviceRoutes);
 
 // Connect to MongoDB
 mongoose
