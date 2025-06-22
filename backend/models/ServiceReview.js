@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
-const reviewSchema = new Schema(
+const serviceReviewSchema = new Schema(
   {
-    providerId: {
+    serviceId: {
       type: Schema.Types.ObjectId,
-      ref: "Provider",
+      ref: "Service",
       required: true,
     },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -15,4 +15,7 @@ const reviewSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Review", reviewSchema);
+serviceReviewSchema.index({ serviceId: 1, userId: 1 }, { unique: true });
+
+
+export default mongoose.model("ServiceReview", serviceReviewSchema);
