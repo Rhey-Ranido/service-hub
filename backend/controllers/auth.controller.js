@@ -6,11 +6,13 @@ const formatUserResponse = (user) => ({
   user: { id: user._id, email: user.email, role: user.role },
   token: generateToken(user),
 });
-
 export const register = async (req, res) => {
-  const { email, password, role } = req.body;
+  let { email, password, role } = req.body;
 
   try {
+    // Default role to "client" if not provided
+    role = role || "client";
+
     // Input validation
     validateRegistration(email, password, role);
 
