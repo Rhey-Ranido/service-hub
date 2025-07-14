@@ -12,6 +12,7 @@ import protectedRoutes from "./routes/protected.route.js";
 import providerRoutes from "./routes/provider.route.js";
 import serviceRoutes from "./routes/service.route.js";
 import providerReviewRoutes from "./routes/providerReview.route.js";
+import serviceReviewRoutes from "./routes/serviceReview.route.js";
 
 dotenv.config();
 const app = express();
@@ -26,6 +27,8 @@ app.use("/api/protected", protectedRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/reviewProvider", providerReviewRoutes);
+app.use("/api/reviewService", serviceReviewRoutes);
+
 
 // Connect to MongoDB
 mongoose
