@@ -135,7 +135,7 @@ const LoginForm = ({ onLoginSuccess }) => {
 
         <div className="mt-4 text-center text-sm">
           Don't have an account?{' '}
-          <a href="#" className="text-primary hover:underline">
+          <a href="/register" className="text-primary hover:underline">
             Sign up
           </a>
         </div>
