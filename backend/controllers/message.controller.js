@@ -4,14 +4,36 @@ import User from "../models/User.js";
 
 export const allMessages = async (req, res) => {
   try {
-    const messages = await Message.find({ chat: req.params.chatId })
-      .populate("sender", "name pic email")
-      .populate("chat");
+    const chatId = req.params.chatId;
+    
+    // Validate chat exists and user is a member
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+    
+    if (!chat.users.includes(req.user._id)) {
+      return res.status(403).json({ message: "Not authorized to access this chat" });
+    }
+
+    const messages = await Message.find({ chat: chatId })
+      .populate("sender", "firstName lastName email profileImageUrl")
+      .populate({
+        path: "chat",
+        populate: {
+          path: "users",
+          select: "firstName lastName email profileImageUrl"
+        }
+      })
+      .sort({ createdAt: 1 }); // Sort messages by creation time
+
     res.status(200).json(messages);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Fetching messages failed", error: err.message });
+    console.error("Error in allMessages:", err);
+    res.status(500).json({ 
+      message: "Fetching messages failed",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 };
 
@@ -19,29 +41,62 @@ export const sendMessage = async (req, res) => {
   const { content, chatId } = req.body;
 
   if (!content || !chatId) {
-    return res.status(400).json({ message: "Content and ChatId are required" });
+    return res.status(400).json({ 
+      message: "Invalid data",
+      errors: {
+        content: !content ? "Message content is required" : null,
+        chatId: !chatId ? "Chat ID is required" : null
+      }
+    });
   }
 
   try {
+    // Validate chat exists and user is a member
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+    
+    if (!chat.users.includes(req.user._id)) {
+      return res.status(403).json({ message: "Not authorized to send messages in this chat" });
+    }
+
     let message = await Message.create({
       sender: req.user._id,
-      content,
+      content: content.trim(),
       chat: chatId,
     });
 
-    message = await message.populate("sender", "name pic");
-    message = await message.populate("chat");
-    message = await User.populate(message, {
-      path: "chat.users",
-      select: "name pic email",
+    message = await message.populate([
+      {
+        path: "sender",
+        select: "firstName lastName email profileImageUrl"
+      },
+      {
+        path: "chat",
+        populate: {
+          path: "users",
+          select: "firstName lastName email profileImageUrl"
+        }
+      }
+    ]);
+
+    await Chat.findByIdAndUpdate(chatId, { 
+      latestMessage: message._id,
+      updatedAt: new Date()
     });
 
-    await Chat.findByIdAndUpdate(chatId, { latestMessage: message._id });
+    // Emit socket event for real-time messaging
+    if (req.io) {
+      req.io.to(chatId).emit("new_message", message);
+    }
 
     res.status(201).json(message);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Sending message failed", error: err.message });
+    console.error("Error in sendMessage:", err);
+    res.status(500).json({ 
+      message: "Sending message failed",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 };

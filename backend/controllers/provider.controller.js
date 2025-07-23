@@ -28,10 +28,8 @@ export const createProvider = async (req, res) => {
       bio: req.body.bio || '',
       location: {
         address: location.address,
-        coordinates: location.coordinates || {
-          type: "Point",
-          coordinates: [0, 0] // Default coordinates, should be updated later
-        }
+        type: "Point",
+        coordinates: location.coordinates || [0, 0] // Default coordinates [longitude, latitude]
       },
       categories: req.body.categories || [],
       skills: req.body.skills || [],

@@ -15,6 +15,11 @@ const chatSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
     },
+    serviceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Service",
+      required: false, // Optional - not all chats are about specific services
+    },
   },
   { timestamps: true }
 );

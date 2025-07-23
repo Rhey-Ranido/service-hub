@@ -59,7 +59,7 @@ export const getAllServices = async (req, res) => {
     const services = await Service.find(filter)
       .populate({
         path: 'providerId',
-        select: 'name location.address rating isVerified',
+        select: 'name location.address rating isVerified userId',
         match: location && location !== 'all' ? { 'location.address': { $regex: location, $options: 'i' } } : {}
       })
       .sort(sortObj)
@@ -95,7 +95,8 @@ export const getAllServices = async (req, res) => {
         images: service.images,
         imageUrls: imageUrls,
         provider: {
-          id: service.providerId._id,
+          id: service.providerId.userId, // Use the User ID, not the Provider ID
+          providerId: service.providerId._id, // Keep the Provider ID for reference
           name: service.providerId.name,
           location: service.providerId.location.address,
           rating: service.providerId.rating.average,
@@ -133,11 +134,70 @@ export const getAllServicesByProviderId = async (req, res) => {
     }
 
     const services = await Service.find({ providerId })
-      .populate("providerId", "-__v")
+      .populate("providerId", "-__v userId")
       .lean();
 
     res.status(200).json(services);
   } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// GET all services for the authenticated provider
+export const getMyServices = async (req, res) => {
+  try {
+    // Find provider by authenticated user ID
+    const provider = await Provider.findOne({ userId: req.user.id });
+    if (!provider) {
+      return res.status(404).json({ message: "Provider profile not found" });
+    }
+
+    // Get services for this provider
+    const services = await Service.find({ providerId: provider._id })
+      .populate({
+        path: 'providerId',
+        select: 'name location.address rating isVerified userId'
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Format services for frontend
+    const formattedServices = services.map(service => {
+      const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
+      const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
+
+      return {
+        id: service._id,
+        title: service.title,
+        description: service.description,
+        shortDescription: service.shortDescription,
+        price: service.price,
+        category: service.category,
+        tags: service.tags,
+        images: service.images,
+        imageUrls: imageUrls,
+        featured: service.featured,
+        isActive: service.isActive,
+        deliveryTime: service.deliveryTime,
+        revisions: service.revisions,
+        requirements: service.requirements,
+        faqs: service.faqs,
+        packages: service.packages,
+        rating: service.rating,
+        totalOrders: service.totalOrders,
+        views: service.views,
+        createdAt: service.createdAt,
+        updatedAt: service.updatedAt
+      };
+    });
+
+    res.status(200).json({
+      services: formattedServices,
+      total: formattedServices.length
+    });
+
+  } catch (err) {
+    console.error('Error fetching provider services:', err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -154,11 +214,7 @@ export const getServiceById = async (req, res) => {
     const service = await Service.findById(id)
       .populate({
         path: 'providerId',
-        select: '-__v',
-        populate: {
-          path: 'userId',
-          select: 'email firstName lastName isVerified'
-        }
+        select: 'name bio profileImage location rating totalReviews totalServices isVerified responseTime completedProjects categories skills languages socialLinks createdAt userId'
       });
 
     if (!service) {
@@ -196,7 +252,8 @@ export const getServiceById = async (req, res) => {
       totalOrders: service.totalOrders,
       views: service.views + 1,
       provider: {
-        id: service.providerId._id,
+        id: service.providerId.userId, // Use the User ID, not the Provider ID
+        providerId: service.providerId._id, // Keep the Provider ID for reference
         name: service.providerId.name,
         bio: service.providerId.bio,
         profileImage: service.providerId.profileImage,
@@ -217,6 +274,18 @@ export const getServiceById = async (req, res) => {
       createdAt: service.createdAt,
       updatedAt: service.updatedAt
     };
+
+    console.log('Service provider data:', {
+      providerId: service.providerId._id,
+      userId: service.providerId.userId,
+      name: service.providerId.name
+    });
+
+    // Check if userId is available
+    if (!service.providerId.userId) {
+      console.error('Provider userId is missing!');
+      return res.status(500).json({ message: "Provider user ID is missing" });
+    }
 
     res.status(200).json(formattedService);
   } catch (err) {

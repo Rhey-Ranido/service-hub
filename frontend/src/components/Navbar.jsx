@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, LogOut, Settings, Home } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, Home, ChevronDown } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -62,6 +64,20 @@ const Navbar = () => {
       window.removeEventListener('userProfileUpdated', handleUserUpdate);
       window.removeEventListener('storage', handleStorageChange);
       delete window.debugProfileImage;
+    };
+  }, []);
+
+  // Handle clicking outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -197,27 +213,58 @@ const Navbar = () => {
 
               {user ? (
                 <>
-                  <NavLink href="/services">Services</NavLink>
-                  <NavLink href="/providers">Providers</NavLink>
-                  <NavLink href="/messages">Messages</NavLink>
+                  {user.role === 'provider' && (
+                    <NavLink href="/dashboard" isActive={isActiveRoute('/dashboard')}>
+                      Dashboard
+                    </NavLink>
+                  )}
+                  {user.role === 'client' && (
+                    <NavLink href="/messages" isActive={isActiveRoute('/messages')}>
+                      Messages
+                    </NavLink>
+                  )}
                   
-                  {/* User menu */}
-                                      <div className="flex items-center space-x-2 ml-4 pl-4 border-l border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <ProfileAvatar />
-                        <div className="hidden lg:block">
-                          <p className="text-sm font-medium text-gray-900">{user.email}</p>
-                          <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                        </div>
+                  {/* User Profile Dropdown */}
+                  <div className="relative ml-4 pl-4 border-l border-gray-200" ref={profileDropdownRef}>
+                    <button
+                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                      className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    >
+                      <ProfileAvatar />
+                      <div className="hidden lg:block text-left">
+                        <p className="text-sm font-medium text-gray-900 truncate max-w-32">
+                          {user.email?.split('@')[0] || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                       </div>
-                    
-                    <Button variant="ghost" size="sm" onClick={() => handleNavigation('/settings')}>
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                    
-                    <Button variant="ghost" size="sm" onClick={handleLogout}>
-                      <LogOut className="h-4 w-4" />
-                    </Button>
+                      <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {profileDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 animate-in fade-in duration-200">
+                        <button
+                          onClick={() => {
+                            handleNavigation('/settings');
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                        >
+                          <Settings className="h-4 w-4 mr-3" />
+                          Settings
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+                        >
+                          <LogOut className="h-4 w-4 mr-3" />
+                          Sign Out
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -259,9 +306,17 @@ const Navbar = () => {
             
             {user ? (
               <>
+                                {user.role === 'provider' && (
+                  <MobileNavLink href="/dashboard" isActive={isActiveRoute('/dashboard')}>
+                    Dashboard
+                  </MobileNavLink>
+                )}
                 <MobileNavLink href="/services">Services</MobileNavLink>
-                <MobileNavLink href="/providers">Providers</MobileNavLink>
-                <MobileNavLink href="/messages">Messages</MobileNavLink>
+                {user.role === 'client' && (
+                  <MobileNavLink href="/messages" isActive={isActiveRoute('/messages')}>
+                    Messages
+                    </MobileNavLink>
+                )}
                 
                 {/* User info section */}
                 <div className="pt-4 pb-3 border-t border-gray-200">

@@ -2,11 +2,20 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 export const protect = (req, res, next) => {
+  console.log('Auth middleware - headers:', {
+    authorization: req.headers.authorization ? 'present' : 'missing',
+    contentType: req.headers['content-type']
+  });
+  
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "No token provided" });
+  if (!token) {
+    console.error('No token provided in request');
+    return res.status(401).json({ message: "No token provided" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Token decoded successfully:', { id: decoded.id, role: decoded.role });
 
     req.user = {
       _id: decoded.id,
@@ -15,7 +24,8 @@ export const protect = (req, res, next) => {
     };
 
     next();
-  } catch {
+  } catch (error) {
+    console.error('Token verification failed:', error.message);
     res.status(403).json({ message: "Invalid or expired token" });
   }
 };

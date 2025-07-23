@@ -58,14 +58,14 @@ const Services = () => {
       const data = await response.json();
       console.log('Fetched services:', data);
       
-      // Transform the API data to match the frontend expectations
+      // The backend already provides the correct format, just use it directly
       const transformedServices = data.services?.map(service => ({
-        id: service._id,
+        id: service.id, // Use the id field that backend already provides
         title: service.title,
         description: service.description,
         shortDescription: service.shortDescription,
-        price: service.price?.amount || 0,
-        priceUnit: service.price?.unit || 'hour',
+        price: service.price || 0,
+        priceUnit: service.priceUnit || 'hour',
         tags: service.tags || [],
         category: service.category,
         featured: service.featured || false,
@@ -74,11 +74,11 @@ const Services = () => {
         revisions: service.revisions,
         totalOrders: service.totalOrders || 0,
         provider: {
-          id: service.providerId?._id,
-          name: service.providerId?.name || 'Unknown Provider',
-          rating: service.rating?.average || 0,
-          reviewCount: service.rating?.count || 0,
-          location: service.providerId?.location?.address || 'Location not specified'
+          id: service.provider?.id,
+          name: service.provider?.name || 'Unknown Provider',
+          rating: service.provider?.rating || 0,
+          reviewCount: service.provider?.reviewCount || 0,
+          location: service.provider?.location || 'Location not specified'
         },
         rating: {
           average: service.rating?.average || 0,
@@ -215,7 +215,11 @@ const Services = () => {
   const currentServices = filteredServices.slice(startIndex, endIndex);
 
   const handleServiceClick = (service) => {
-    console.log('Service clicked:', service);
+    if (!service.id) {
+      console.error('Service ID is undefined!');
+      return;
+    }
+    
     // Navigate to service detail page
     navigate(`/services/${service.id}`);
   };

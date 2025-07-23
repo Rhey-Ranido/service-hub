@@ -23,7 +23,10 @@ const ServiceCard = ({ service, onClick }) => {
   };
 
   return (
-    <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-0 shadow-md overflow-hidden">
+    <Card 
+      className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-0 shadow-md overflow-hidden"
+      onClick={handleCardClick}
+    >
       <div className="relative">
         {/* Service Image */}
         <div className="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
@@ -136,7 +139,10 @@ const ServiceCard = ({ service, onClick }) => {
         <Button 
           className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
           variant="outline"
-          onClick={handleCardClick}
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click when button is clicked
+            handleCardClick();
+          }}
         >
           <Clock className="w-4 h-4 mr-2" />
           View Details

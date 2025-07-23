@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ProfileImageUpload from '../components/ProfileImageUpload';
+import ProviderRegistrationForm from '../components/ProviderRegistrationForm';
+import ServiceCreationForm from '../components/ServiceCreationForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +18,9 @@ import {
   Save,
   Eye,
   EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  Briefcase,
+  Zap
 } from 'lucide-react';
 
 const UserSettings = () => {
@@ -49,6 +53,12 @@ const UserSettings = () => {
     current: false,
     new: false,
     confirm: false
+  });
+
+  // Provider registration flow states
+  const [providerFlow, setProviderFlow] = useState({
+    step: 'none', // 'none', 'provider-form', 'service-form', 'completed'
+    showFlow: false
   });
 
   const API_BASE_URL = 'http://localhost:3000/api';
@@ -250,10 +260,36 @@ const UserSettings = () => {
     );
   }
 
+  // Handle provider registration success
+  const handleProviderRegistrationSuccess = (providerData) => {
+    console.log('Provider registration successful:', providerData);
+    setProviderFlow({ step: 'service-form', showFlow: true });
+    showMessage('Provider profile created successfully! Now create your first service.', 'success');
+  };
+
+  // Handle service creation success
+  const handleServiceCreationSuccess = (serviceData) => {
+    console.log('Service creation successful:', serviceData);
+    setProviderFlow({ step: 'completed', showFlow: false });
+    setActiveTab('profile'); // Go back to profile tab
+    showMessage('Congratulations! You are now a service provider. Your first service is live!', 'success');
+  };
+
+  // Handle flow cancellation/skip
+  const handleFlowCancel = () => {
+    setProviderFlow({ step: 'none', showFlow: false });
+  };
+
+  // Start provider registration flow
+  const startProviderFlow = () => {
+    setProviderFlow({ step: 'provider-form', showFlow: true });
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'account', label: 'Account', icon: Mail },
     { id: 'security', label: 'Security', icon: Lock },
+    ...(user?.role === 'client' ? [{ id: 'provider', label: 'Become Provider', icon: Briefcase }] : [])
   ];
 
   return (
@@ -307,8 +343,26 @@ const UserSettings = () => {
           </div>
         </div>
 
+        {/* Provider Registration Flow */}
+        {providerFlow.showFlow && (
+          <div className="mb-8">
+            {providerFlow.step === 'provider-form' && (
+              <ProviderRegistrationForm
+                onSuccess={handleProviderRegistrationSuccess}
+                onCancel={handleFlowCancel}
+              />
+            )}
+            {providerFlow.step === 'service-form' && (
+              <ServiceCreationForm
+                onSuccess={handleServiceCreationSuccess}
+                onSkip={handleFlowCancel}
+              />
+            )}
+          </div>
+        )}
+
         {/* Tab Content */}
-        <div className="space-y-6">
+        <div className={`space-y-6 ${providerFlow.showFlow ? 'hidden' : ''}`}>
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -364,7 +418,13 @@ const UserSettings = () => {
                           <Badge variant={user?.isVerified ? 'default' : 'secondary'}>
                             {user?.isVerified ? 'Verified' : 'Unverified'}
                           </Badge>
-                          <Badge variant="outline">{user?.role}</Badge>
+                          <Badge variant="outline" className="capitalize">{user?.role}</Badge>
+                          {user?.role === 'provider' && (
+                            <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                              <Zap className="h-3 w-3 mr-1" />
+                              Provider
+                            </Badge>
+                          )}
                         </div>
                         <Button 
                           type="submit" 
@@ -492,6 +552,100 @@ const UserSettings = () => {
                 </form>
               </CardContent>
             </Card>
+          )}
+
+          {/* Become Provider Tab */}
+          {activeTab === 'provider' && user?.role === 'client' && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Become a Service Provider
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="text-center py-8">
+                      <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Briefcase className="h-10 w-10 text-primary" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        Start Offering Your Services
+                      </h3>
+                      <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                        Transform your skills into a business. Join thousands of providers already earning on our platform by offering your expertise to clients worldwide.
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="text-center">
+                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                            <User className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <h4 className="font-semibold mb-1">Create Profile</h4>
+                          <p className="text-sm text-gray-600">Set up your professional provider profile</p>
+                        </div>
+                        <div className="text-center">
+                          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                            <Briefcase className="h-6 w-6 text-green-600" />
+                          </div>
+                          <h4 className="font-semibold mb-1">Add Services</h4>
+                          <p className="text-sm text-gray-600">Create your first service offering</p>
+                        </div>
+                        <div className="text-center">
+                          <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                            <Zap className="h-6 w-6 text-purple-600" />
+                          </div>
+                          <h4 className="font-semibold mb-1">Start Earning</h4>
+                          <p className="text-sm text-gray-600">Connect with clients and grow your business</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <Button 
+                          onClick={startProviderFlow}
+                          size="lg"
+                          className="px-8"
+                        >
+                          <Briefcase className="mr-2 h-4 w-4" />
+                          Get Started as Provider
+                        </Button>
+                        
+                        <div className="text-xs text-gray-500">
+                          <p>✓ Free to join • ✓ Set your own prices • ✓ Flexible schedule</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-6">
+                      <h4 className="font-semibold mb-3">What you'll get:</h4>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                          Access to thousands of potential clients
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                          Professional tools to manage your services
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                          Secure payment processing
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                          24/7 customer support
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                          Reviews and ratings system to build your reputation
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
       </div>
