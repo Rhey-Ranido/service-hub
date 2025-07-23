@@ -1,12 +1,123 @@
 import mongoose from "mongoose";
 import Service from "../models/Service.js";
+import Provider from "../models/Provider.js";
 
-// GET all services (public)
+// GET all services with advanced filtering and search
 export const getAllServices = async (req, res) => {
   try {
-    const services = await Service.find().populate("providerId", "-__v").lean();
+    const {
+      search,
+      category,
+      location,
+      minPrice,
+      maxPrice,
+      sortBy = 'rating.average',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 12,
+      featured
+    } = req.query;
 
-    res.status(200).json(services);
+    // Build filter object
+    const filter = { isActive: true };
+
+    // Search filter
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { shortDescription: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } }
+      ];
+    }
+
+    // Category filter
+    if (category && category !== 'all') {
+      filter.category = category;
+    }
+
+    // Featured filter
+    if (featured === 'true') {
+      filter.featured = true;
+    }
+
+    // Price range filter
+    if (minPrice || maxPrice) {
+      filter['price.amount'] = {};
+      if (minPrice) filter['price.amount'].$gte = Number(minPrice);
+      if (maxPrice) filter['price.amount'].$lte = Number(maxPrice);
+    }
+
+    // Build sort object
+    const sortObj = {};
+    sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Get services with populated provider data
+    const services = await Service.find(filter)
+      .populate({
+        path: 'providerId',
+        select: 'name location.address rating isVerified',
+        match: location && location !== 'all' ? { 'location.address': { $regex: location, $options: 'i' } } : {}
+      })
+      .sort(sortObj)
+      .skip(skip)
+      .limit(Number(limit))
+      .lean();
+
+    // Filter out services where provider didn't match location filter
+    const filteredServices = services.filter(service => service.providerId);
+
+    // Get total count for pagination
+    const totalServices = await Service.countDocuments(filter);
+    
+    // Format response to match frontend expectations
+    const formattedServices = filteredServices.map(service => {
+      const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
+      const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
+      const providerProfileImageUrl = service.providerId.profileImage 
+        ? `${baseUrl}/${service.providerId.profileImage}` 
+        : null;
+
+      return {
+        id: service._id,
+        title: service.title,
+        description: service.shortDescription || service.description,
+        price: service.price.amount,
+        priceUnit: service.price.unit,
+        tags: service.tags,
+        category: service.category,
+        featured: service.featured,
+        rating: service.rating,
+        totalOrders: service.totalOrders,
+        images: service.images,
+        imageUrls: imageUrls,
+        provider: {
+          id: service.providerId._id,
+          name: service.providerId.name,
+          location: service.providerId.location.address,
+          rating: service.providerId.rating.average,
+          reviewCount: service.providerId.rating.count,
+          isVerified: service.providerId.isVerified,
+          profileImage: service.providerId.profileImage,
+          profileImageUrl: providerProfileImageUrl
+        },
+        createdAt: service.createdAt
+      };
+    });
+
+    res.status(200).json({
+      services: formattedServices,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalServices / limit),
+        totalServices,
+        hasNextPage: page * limit < totalServices,
+        hasPrevPage: page > 1
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -31,7 +142,7 @@ export const getAllServicesByProviderId = async (req, res) => {
   }
 };
 
-// GET a specific service by ID
+// GET a specific service by ID with detailed information
 export const getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -40,13 +151,74 @@ export const getServiceById = async (req, res) => {
       return res.status(400).json({ message: "Invalid service ID" });
     }
 
-    const service = await Service.findById(id).populate("providerId");
+    const service = await Service.findById(id)
+      .populate({
+        path: 'providerId',
+        select: '-__v',
+        populate: {
+          path: 'userId',
+          select: 'email firstName lastName isVerified'
+        }
+      });
 
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    res.status(200).json(service);
+    // Increment view count
+    await Service.findByIdAndUpdate(id, { $inc: { views: 1 } });
+
+    // Generate image URLs
+    const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
+    const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
+    const providerProfileImageUrl = service.providerId.profileImage 
+      ? `${baseUrl}/${service.providerId.profileImage}` 
+      : null;
+
+    // Format response
+    const formattedService = {
+      id: service._id,
+      title: service.title,
+      description: service.description,
+      shortDescription: service.shortDescription,
+      price: service.price,
+      category: service.category,
+      tags: service.tags,
+      images: service.images,
+      imageUrls: imageUrls,
+      featured: service.featured,
+      deliveryTime: service.deliveryTime,
+      revisions: service.revisions,
+      requirements: service.requirements,
+      faqs: service.faqs,
+      packages: service.packages,
+      rating: service.rating,
+      totalOrders: service.totalOrders,
+      views: service.views + 1,
+      provider: {
+        id: service.providerId._id,
+        name: service.providerId.name,
+        bio: service.providerId.bio,
+        profileImage: service.providerId.profileImage,
+        profileImageUrl: providerProfileImageUrl,
+        location: service.providerId.location.address,
+        rating: service.providerId.rating,
+        totalReviews: service.providerId.totalReviews,
+        totalServices: service.providerId.totalServices,
+        isVerified: service.providerId.isVerified,
+        responseTime: service.providerId.responseTime,
+        completedProjects: service.providerId.completedProjects,
+        categories: service.providerId.categories,
+        skills: service.providerId.skills,
+        languages: service.providerId.languages,
+        socialLinks: service.providerId.socialLinks,
+        memberSince: service.providerId.createdAt
+      },
+      createdAt: service.createdAt,
+      updatedAt: service.updatedAt
+    };
+
+    res.status(200).json(formattedService);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -55,18 +227,45 @@ export const getServiceById = async (req, res) => {
 // CREATE a new service (provider only)
 export const createService = async (req, res) => {
   try {
-    const newService = await Service.create({
+    // Verify user is a provider
+    const provider = await Provider.findOne({ userId: req.user.id });
+    if (!provider) {
+      return res.status(403).json({ message: "You must be a registered provider to create services" });
+    }
+
+    // Validate required fields
+    const { title, description, price, category } = req.body;
+    if (!title || !description || !price || !category) {
+      return res.status(400).json({ 
+        message: "Title, description, price, and category are required" 
+      });
+    }
+
+    // Create service with provider ID
+    const serviceData = {
       ...req.body,
-      providerId: req.user.id, // Ensure `req.user` is set by auth middleware
+      providerId: provider._id,
+      price: {
+        amount: typeof price === 'object' ? price.amount : price,
+        unit: typeof price === 'object' ? price.unit : 'hour'
+      }
+    };
+
+    const newService = await Service.create(serviceData);
+
+    // Update provider's total services count
+    await Provider.findByIdAndUpdate(provider._id, { 
+      $inc: { totalServices: 1 } 
     });
 
-    const populatedService = await newService.populate("providerId", "-__v");
+    const populatedService = await newService.populate({
+      path: 'providerId',
+      select: 'name location.address rating isVerified'
+    });
 
     res.status(201).json(populatedService);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Failed to create service", error: err.message });
+    res.status(500).json({ message: "Failed to create service", error: err.message });
   }
 };
 

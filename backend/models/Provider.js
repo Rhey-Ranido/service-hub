@@ -5,8 +5,10 @@ const providerSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true },
-    services: [{ type: String }], // optional for lightweight service listing
+    bio: { type: String },
+    profileImage: { type: String },
     location: {
+      address: { type: String, required: true }, // "San Francisco, CA"
       type: {
         type: String,
         enum: ["Point"],
@@ -14,18 +16,37 @@ const providerSchema = new Schema(
       },
       coordinates: {
         type: [Number], // [longitude, latitude]
-        required: true,
+        required: false,
       },
     },
+    rating: {
+      average: { type: Number, default: 0, min: 0, max: 5 },
+      count: { type: Number, default: 0 },
+    },
+    totalReviews: { type: Number, default: 0 },
+    totalServices: { type: Number, default: 0 },
+    isVerified: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "suspended"],
       default: "pending",
+    },
+    categories: [{ type: String }], // ["Technology", "Marketing"]
+    skills: [{ type: String }], // ["React", "Node.js", "SEO"]
+    languages: [{ type: String }], // ["English", "Spanish"]
+    responseTime: { type: String, default: "within 24 hours" },
+    completedProjects: { type: Number, default: 0 },
+    socialLinks: {
+      website: String,
+      linkedin: String,
+      twitter: String,
+      github: String,
     },
   },
   { timestamps: true }
 );
 
-providerSchema.index({ location: "2dsphere" });
+// Create 2dsphere index for location coordinates only (not the entire location object)
+providerSchema.index({ "location": "2dsphere" });
 
 export default mongoose.model("Provider", providerSchema);

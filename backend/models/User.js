@@ -18,6 +18,30 @@ const userSchema = new mongoose.Schema(
       enum: ["client", "provider", "admin"],
       default: "client",
     },
+    firstName: {
+      type: String,
+      required: false,
+    },
+    lastName: {
+      type: String,
+      required: false,
+    },
+    profileImage: {
+      type: String,
+      required: false,
+    },
+    phone: {
+      type: String,
+      required: false,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );

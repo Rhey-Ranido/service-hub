@@ -13,12 +13,13 @@ import { protect, restrictTo } from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
 // Public routes
-router.get("/", getAllProviders);
-router.get("/:id", getProviderById);
+router.get("/", getAllProviders); // Now supports advanced filtering and search
+router.get("/:id", getProviderById); // Now includes services and detailed info
 
 // Protected routes
-router.post("/", protect, restrictTo("provider"), createProvider);
-router.put("/me", protect, restrictTo("provider"), updateProvider);
-router.delete("/:id", protect, restrictTo("provider", "admin"), deleteProvider);
+router.use(protect); // Auth required below
+router.post("/", createProvider); // Creates provider profile and updates user role
+router.put("/me", updateProvider);
+router.delete("/:id", restrictTo("admin"), deleteProvider);
 
 export default router;
