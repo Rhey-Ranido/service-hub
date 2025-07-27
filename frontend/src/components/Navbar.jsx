@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, LogOut, Settings, Home, ChevronDown } from 'lucide-react';
+import DarkModeToggle from './DarkModeToggle';
+import { Menu, X, User, LogOut, Settings, Home, ChevronDown, Palette, Shield } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -104,7 +105,7 @@ const Navbar = () => {
       className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
         isActive
           ? 'bg-primary text-primary-foreground'
-          : 'text-gray-700 hover:text-primary hover:bg-gray-100'
+          : 'text-foreground hover:text-primary hover:bg-muted'
       }`}
     >
       {children}
@@ -117,7 +118,7 @@ const Navbar = () => {
       className={`w-full flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
         isActive
           ? 'bg-primary text-primary-foreground'
-          : 'text-gray-700 hover:text-primary hover:bg-gray-100'
+          : 'text-foreground hover:text-primary hover:bg-muted'
       }`}
     >
       {Icon && <Icon className="mr-3 h-5 w-5" />}
@@ -187,7 +188,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <nav className="bg-background shadow-sm border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -223,36 +224,50 @@ const Navbar = () => {
                       Messages
                     </NavLink>
                   )}
+                  {user.role === 'admin' && (
+                    <NavLink href="/admin" isActive={isActiveRoute('/admin')}>
+                      Admin
+                    </NavLink>
+                  )}
                   
                   {/* User Profile Dropdown */}
                   <div className="relative ml-4 pl-4 border-l border-gray-200" ref={profileDropdownRef}>
                     <button
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                      className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                      className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
                       <ProfileAvatar />
                       <div className="hidden lg:block text-left">
-                        <p className="text-sm font-medium text-gray-900 truncate max-w-32">
+                        <p className="text-sm font-medium text-foreground truncate max-w-32">
                           {user.email?.split('@')[0] || 'User'}
                         </p>
-                        <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
                       </div>
                       <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {/* Dropdown Menu */}
                     {profileDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 animate-in fade-in duration-200">
+                      <div className="absolute right-0 mt-2 w-48 bg-background rounded-md shadow-lg border border-border py-1 z-50 animate-in fade-in duration-200">
                         <button
                           onClick={() => {
                             handleNavigation('/settings');
                             setProfileDropdownOpen(false);
                           }}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                          className="w-full flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors duration-200"
                         >
                           <Settings className="h-4 w-4 mr-3" />
                           Settings
                         </button>
+                        <div className="w-full flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors duration-200">
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center">
+                              <Palette className="h-4 w-4 mr-3" />
+                              <span>Dark Mode</span>
+                            </div>
+                            <DarkModeToggle className="h-6 w-6" />
+                          </div>
+                        </div>
                         <button
                           onClick={() => {
                             handleLogout();
@@ -299,7 +314,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-background border-t border-border">
             <MobileNavLink href="/" icon={Home} isActive={isActiveRoute('/')}>
               Home
             </MobileNavLink>
@@ -319,12 +334,12 @@ const Navbar = () => {
                 )}
                 
                 {/* User info section */}
-                <div className="pt-4 pb-3 border-t border-gray-200">
+                <div className="pt-4 pb-3 border-t border-border">
                   <div className="flex items-center px-3">
                     <ProfileAvatar className="h-10 w-10" />
                     <div className="ml-3">
-                      <div className="text-base font-medium text-gray-800">{user.email}</div>
-                      <div className="text-sm text-gray-500 capitalize">{user.role}</div>
+                      <div className="text-base font-medium text-foreground">{user.email}</div>
+                      <div className="text-sm text-muted-foreground capitalize">{user.role}</div>
                     </div>
                   </div>
                   <div className="mt-3 space-y-1">
@@ -333,7 +348,7 @@ const Navbar = () => {
                     </MobileNavLink>
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-100 transition-colors duration-200"
+                      className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-red-600 hover:bg-muted transition-colors duration-200"
                     >
                       <LogOut className="mr-3 h-5 w-5" />
                       Sign Out

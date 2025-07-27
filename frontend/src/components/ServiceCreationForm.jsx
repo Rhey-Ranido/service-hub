@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageUpload from '@/components/ui/ImageUpload';
 import { 
   Briefcase, 
   DollarSign, 
@@ -42,6 +43,8 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -140,6 +143,28 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
     }
   };
 
+  // Image upload handlers
+  const handleImageUpload = async (files) => {
+    setUploadingImages(true);
+    setError('');
+
+    try {
+      // Store files for later upload after service creation
+      const fileArray = Array.isArray(files) ? files : [files];
+      setUploadedImages(prev => [...prev, ...fileArray]);
+      
+    } catch (err) {
+      console.error('Image upload error:', err);
+      setError(err.message || 'Failed to process images');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleImageRemove = (index) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const validateForm = () => {
     if (!formData.title.trim()) {
       setError('Service title is required');
@@ -196,6 +221,30 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to create service');
+      }
+
+      // Upload images if any were selected
+      if (uploadedImages.length > 0) {
+        try {
+          const imageFormData = new FormData();
+          uploadedImages.forEach(file => {
+            imageFormData.append('images', file);
+          });
+
+          const imageResponse = await fetch(`${API_BASE_URL}/upload/service/${data.id}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: imageFormData,
+          });
+
+          if (!imageResponse.ok) {
+            console.warn('Failed to upload images, but service was created successfully');
+          }
+        } catch (imageError) {
+          console.warn('Error uploading images:', imageError);
+        }
       }
 
       setSuccess(true);
@@ -283,6 +332,31 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
                 onChange={handleInputChange}
                 placeholder="e.g., Professional Web Development, Logo Design, Content Writing"
                 required
+              />
+            </div>
+
+            {/* Service Images */}
+            <div className="space-y-2">
+              <Label>Service Images</Label>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload images to showcase your work. You can upload up to 5 images.
+              </p>
+              <ImageUpload
+                onUpload={handleImageUpload}
+                onRemove={handleImageRemove}
+                maxFiles={5}
+                maxSize={5}
+                acceptedTypes={['image/jpeg', 'image/png', 'image/gif', 'image/webp']}
+                previewImages={uploadedImages.map(file => ({
+                  file,
+                  url: URL.createObjectURL(file),
+                  name: file.name,
+                  size: file.size
+                }))}
+                loading={uploadingImages}
+                multiple={true}
+                uploadText="Upload Service Images"
+                dragText="Drag and drop your service images here"
               />
             </div>
 

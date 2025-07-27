@@ -78,6 +78,14 @@ const seedData = async () => {
         firstName: 'Test',
         lastName: 'Client',
         isVerified: true
+      },
+      {
+        email: 'admin@example.com',
+        password: await bcrypt.hash('password123', 12),
+        role: 'admin',
+        firstName: 'Admin',
+        lastName: 'User',
+        isVerified: true
       }
     ];
 

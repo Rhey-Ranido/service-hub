@@ -440,10 +440,10 @@ const Messages = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Messages</h1>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Messages</h1>
           <p className="text-gray-600">
             Communicate with service providers and manage your conversations
           </p>
@@ -455,8 +455,8 @@ const Messages = () => {
             // Chat Boxes View
             <div className="space-y-6">
               {/* Header with New Chat Button */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center justify-between sm:justify-start sm:space-x-4">
                   <h2 className="text-xl font-semibold text-gray-900">Your Conversations</h2>
                   <Button 
                     size="sm" 
@@ -466,22 +466,38 @@ const Messages = () => {
                         fetchProviders();
                       }
                     }}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 sm:hidden"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      setShowProviderSearch(!showProviderSearch);
+                      if (!showProviderSearch) {
+                        fetchProviders();
+                      }
+                    }}
+                    className="hidden sm:flex items-center gap-2"
                   >
                     <Plus className="h-4 w-4" />
                     New Chat
                   </Button>
-                </div>
-                
-                {/* Search */}
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search conversations..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                  
+                  {/* Search */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search conversations..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -554,7 +570,7 @@ const Messages = () => {
               )}
 
               {/* Chat Boxes Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {loading ? (
                   // Loading state
                   <div className="col-span-full">
@@ -563,7 +579,7 @@ const Messages = () => {
                         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-gray-600">Loading conversations...</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                         {Array.from({ length: 8 }).map((_, index) => (
                           <Card key={index} className="p-4 animate-pulse">
                             <div className="flex items-center space-x-3">
@@ -679,9 +695,9 @@ const Messages = () => {
           ) : (
             // Chat Window View
             <div className="h-[600px] border rounded-lg overflow-hidden bg-white shadow-sm">
-              <div className="flex h-full">
+              <div className="flex flex-col lg:flex-row h-full">
                 {/* Chat List Sidebar */}
-                <div className="flex flex-col w-80 border-r border-gray-200">
+                <div className="flex flex-col w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-200">
                   {/* Header */}
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-3">
@@ -697,7 +713,7 @@ const Messages = () => {
                   </div>
 
                   {/* Chat List */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto max-h-64 lg:max-h-none">
                     {error && (
                       <Alert variant="destructive" className="m-4">
                         <AlertDescription>{error}</AlertDescription>
@@ -723,7 +739,7 @@ const Messages = () => {
                               key={chat._id}
                               onClick={() => setSelectedChat(chat)}
                               className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                                isSelected ? 'bg-blue-50 border-r-2 border-primary' : ''
+                                isSelected ? 'bg-blue-50 lg:border-r-2 border-primary' : ''
                               }`}
                             >
                               <div className="flex items-start space-x-3">
@@ -778,11 +794,11 @@ const Messages = () => {
                           <p className="text-xs text-gray-500">Service Provider</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
+                      <div className="flex items-center space-x-1 sm:space-x-2">
+                        <Button variant="ghost" size="sm" className="hidden sm:flex">
                           <Phone className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="hidden sm:flex">
                           <Video className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm">
@@ -793,7 +809,7 @@ const Messages = () => {
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                  <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 bg-gray-50">
                     {messages.map((message, index) => {
                       const isOwnMessage = message.sender._id === currentUser?.id;
                       const showDate = index === 0 || 
@@ -809,7 +825,7 @@ const Messages = () => {
                             </div>
                           )}
                           <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            <div className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg ${
                               isOwnMessage 
                                 ? 'bg-primary text-primary-foreground' 
                                 : 'bg-white text-gray-900 border'
@@ -847,7 +863,7 @@ const Messages = () => {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200 bg-white">
+                  <div className="p-2 sm:p-4 border-t border-gray-200 bg-white">
                     <div className="flex items-center space-x-2">
                       <Input
                         placeholder="Type a message..."

@@ -31,6 +31,9 @@ const providerSchema = new Schema(
       enum: ["pending", "approved", "rejected", "suspended"],
       default: "pending",
     },
+    rejectionReason: { type: String },
+    adminFeedback: { type: String },
+    statusUpdatedAt: { type: Date },
     categories: [{ type: String }], // ["Technology", "Marketing"]
     skills: [{ type: String }], // ["React", "Node.js", "SEO"]
     languages: [{ type: String }], // ["English", "Spanish"]

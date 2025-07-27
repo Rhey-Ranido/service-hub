@@ -232,6 +232,54 @@ export const updateProvider = async (req, res) => {
   }
 };
 
+// get current user's provider profile
+export const getMyProviderProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const provider = await Provider.findOne({ userId })
+      .populate('userId', 'email firstName lastName isVerified');
+
+    if (!provider) {
+      return res.status(404).json({ message: "Provider profile not found" });
+    }
+
+    res.status(200).json({
+      id: provider._id,
+      name: provider.name,
+      bio: provider.bio,
+      profileImage: provider.profileImage,
+      location: provider.location,
+      status: provider.status,
+      categories: provider.categories,
+      skills: provider.skills,
+      languages: provider.languages,
+      rating: provider.rating,
+      totalReviews: provider.totalReviews,
+      totalServices: provider.totalServices,
+      isVerified: provider.isVerified,
+      responseTime: provider.responseTime,
+      completedProjects: provider.completedProjects,
+      socialLinks: provider.socialLinks,
+      rejectionReason: provider.rejectionReason,
+      adminFeedback: provider.adminFeedback,
+      statusUpdatedAt: provider.statusUpdatedAt,
+      createdAt: provider.createdAt,
+      updatedAt: provider.updatedAt,
+      user: {
+        id: provider.userId._id,
+        email: provider.userId.email,
+        firstName: provider.userId.firstName,
+        lastName: provider.userId.lastName,
+        isVerified: provider.userId.isVerified
+      }
+    });
+  } catch (error) {
+    console.error("Error getting provider profile:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // delete provider
 export const deleteProvider = async (req, res) => {
   try {

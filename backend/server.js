@@ -23,6 +23,7 @@ import chatRoutes from "./routes/chat.route.js";
 import messageRoutes from "./routes/message.route.js";
 import uploadRoutes from "./routes/upload.route.js";
 import userRoutes from "./routes/user.route.js";
+import adminRoutes from "./routes/admin.route.js";
 
 dotenv.config();
 const app = express();
@@ -31,7 +32,7 @@ const app = express();
 app.use(cors({
   origin: ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -54,6 +55,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes);
 
 // MongoDB + HTTP server + Socket.IO
 const server = http.createServer(app);

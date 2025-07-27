@@ -186,7 +186,7 @@ const ProviderRegistrationForm = ({ onSuccess, onCancel }) => {
           Become a Service Provider
         </CardTitle>
         <p className="text-gray-600">
-          Set up your provider profile to start offering services to clients
+          Set up your provider profile to start offering services to clients. Your application will be reviewed by our admin team before approval.
         </p>
       </CardHeader>
       <CardContent>

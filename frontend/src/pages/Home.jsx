@@ -51,18 +51,18 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/5 via-white to-primary/5 py-20">
+      <section className="relative bg-gradient-to-br from-primary/5 via-background to-primary/5 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
               Find the Perfect
               <span className="text-primary block">Service Provider</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               Connect with verified professionals for all your service needs. From web development to home services, we've got you covered.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -90,8 +90,8 @@ export default function Home() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Services</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Featured Services</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
               Discover top-rated services from our verified providers. Quality guaranteed, satisfaction assured.
             </p>
             <Button 
@@ -108,7 +108,7 @@ export default function Home() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                <p className="text-gray-500">Loading featured services...</p>
+                <p className="text-muted-foreground">Loading featured services...</p>
               </div>
             </div>
           ) : error ? (
@@ -130,7 +130,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No featured services available</p>
+              <p className="text-muted-foreground mb-4">No featured services available</p>
               <Button onClick={() => navigate("/services")} variant="outline">
                 Browse All Services
               </Button>
@@ -140,11 +140,11 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      <section className="py-20 bg-gradient-to-br from-muted/50 to-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">What Our Users Say</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-foreground mb-4">What Our Users Say</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
               Don't just take our word for it. Here's what real users have to say about their experience with ServiceHub.
             </p>
           </div>
@@ -163,8 +163,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Find Services</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Find Services</h3>
+              <p className="text-muted-foreground">
                 Search and discover qualified service providers in your area for any task.
               </p>
             </div>
@@ -175,8 +175,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Connect & Chat</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Connect & Chat</h3>
+              <p className="text-muted-foreground">
                 Direct messaging with providers to discuss your project requirements and get quotes.
               </p>
             </div>
@@ -187,8 +187,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Get It Done</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Get It Done</h3>
+              <p className="text-muted-foreground">
                 Hire the right provider and get your project completed with quality and satisfaction guaranteed.
               </p>
             </div>

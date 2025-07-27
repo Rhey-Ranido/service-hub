@@ -5,6 +5,8 @@ import Footer from '../components/Footer';
 import ProfileImageUpload from '../components/ProfileImageUpload';
 import ProviderRegistrationForm from '../components/ProviderRegistrationForm';
 import ServiceCreationForm from '../components/ServiceCreationForm';
+import DarkModeToggle from '../components/DarkModeToggle';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,11 +22,13 @@ import {
   EyeOff,
   AlertTriangle,
   Briefcase,
-  Zap
+  Zap,
+  Palette
 } from 'lucide-react';
 
 const UserSettings = () => {
   const navigate = useNavigate();
+  const { isDarkMode } = useDarkMode();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   
@@ -289,18 +293,19 @@ const UserSettings = () => {
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'account', label: 'Account', icon: Mail },
     { id: 'security', label: 'Security', icon: Lock },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
     ...(user?.role === 'client' ? [{ id: 'provider', label: 'Become Provider', icon: Briefcase }] : [])
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Account Settings</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Account Settings</h1>
+          <p className="text-muted-foreground">
             Manage your account information and preferences
           </p>
         </div>
@@ -320,7 +325,7 @@ const UserSettings = () => {
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-border">
             <nav className="-mb-px flex space-x-8">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -330,8 +335,8 @@ const UserSettings = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -550,6 +555,49 @@ const UserSettings = () => {
                     <span>{submitting.password ? 'Changing...' : 'Change Password'}</span>
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Appearance Tab */}
+          {activeTab === 'appearance' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  Theme Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium">Dark Mode</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Switch between light and dark themes
+                      </p>
+                    </div>
+                    <DarkModeToggle />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium">Current Theme</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {isDarkMode ? 'Dark theme is active' : 'Light theme is active'}
+                      </p>
+                    </div>
+                    <Badge variant={isDarkMode ? 'default' : 'secondary'}>
+                      {isDarkMode ? 'Dark' : 'Light'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Your theme preference will be saved and applied across all devices.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}

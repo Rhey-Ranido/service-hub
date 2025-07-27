@@ -45,6 +45,8 @@ const ProviderDashboard = () => {
     totalEarnings: 0,
     averageRating: 0
   });
+  const [providerStatus, setProviderStatus] = useState(null);
+  const [provider, setProvider] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -78,7 +80,19 @@ const ProviderDashboard = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      // Provider profile data not needed for dashboard stats
+      // Fetch provider profile to check status
+      const providerResponse = await fetch(`${API_BASE_URL}/providers/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (providerResponse.ok) {
+        const providerData = await providerResponse.json();
+        setProviderStatus(providerData.status);
+        setProvider(providerData);
+      }
 
       // Fetch provider's services
       const servicesResponse = await fetch(`${API_BASE_URL}/services/provider/me`, {
@@ -337,6 +351,31 @@ const ProviderDashboard = () => {
                   />
                 </div>
               </div>
+            )}
+
+            {/* Approval Status Alert */}
+            {providerStatus && providerStatus !== 'approved' && (
+              <Alert className="mb-6">
+                <AlertDescription className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  {providerStatus === 'pending' && 'Your provider application is currently under review. You will be notified once approved.'}
+                  {providerStatus === 'rejected' && 'Your provider application has been rejected. Please contact support for more information.'}
+                  {providerStatus === 'suspended' && 'Your provider account has been suspended. Please contact support for more information.'}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Admin Feedback Alert */}
+            {providerStatus && providerStatus === 'approved' && provider?.adminFeedback && (
+              <Alert className="mb-6">
+                <AlertDescription className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <div>
+                    <p className="font-medium">Admin Feedback:</p>
+                    <p className="mt-1">{provider.adminFeedback}</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Tab Content */}

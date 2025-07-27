@@ -33,7 +33,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-gray-900 dark:bg-gray-950 text-white">
       {/* Main footer content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -188,7 +188,7 @@ const Footer = () => {
                 <Input
                   type="email"
                   placeholder="Enter your email"
-                  className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 rounded-r-none focus:border-primary"
+                  className="bg-gray-800 dark:bg-gray-900 border-gray-700 dark:border-gray-600 text-white placeholder-gray-400 rounded-r-none focus:border-primary"
                   required
                 />
                 <Button
@@ -221,7 +221,7 @@ const Footer = () => {
       </div>
 
       {/* Trust indicators */}
-      <div className="border-t border-gray-800">
+      <div className="border-t border-gray-800 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="flex items-center justify-center space-x-3">
@@ -258,7 +258,7 @@ const Footer = () => {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-gray-800">
+      <div className="border-t border-gray-800 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <div className="flex items-center space-x-1 text-sm text-gray-400">

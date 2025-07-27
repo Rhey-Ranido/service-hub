@@ -59,8 +59,11 @@ export const getAllServices = async (req, res) => {
     const services = await Service.find(filter)
       .populate({
         path: 'providerId',
-        select: 'name location.address rating isVerified userId',
-        match: location && location !== 'all' ? { 'location.address': { $regex: location, $options: 'i' } } : {}
+        select: 'name location.address rating isVerified userId status',
+        match: {
+          status: 'approved', // Only show services from approved providers
+          ...(location && location !== 'all' ? { 'location.address': { $regex: location, $options: 'i' } } : {})
+        }
       })
       .sort(sortObj)
       .skip(skip)
@@ -131,6 +134,12 @@ export const getAllServicesByProviderId = async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(providerId)) {
       return res.status(400).json({ message: "Invalid provider ID" });
+    }
+
+    // Check if provider is approved
+    const provider = await Provider.findById(providerId);
+    if (!provider || provider.status !== 'approved') {
+      return res.status(404).json({ message: "Provider not found" });
     }
 
     const services = await Service.find({ providerId })
@@ -214,10 +223,15 @@ export const getServiceById = async (req, res) => {
     const service = await Service.findById(id)
       .populate({
         path: 'providerId',
-        select: 'name bio profileImage location rating totalReviews totalServices isVerified responseTime completedProjects categories skills languages socialLinks createdAt userId'
+        select: 'name bio profileImage location rating totalReviews totalServices isVerified responseTime completedProjects categories skills languages socialLinks createdAt userId status'
       });
 
     if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    // Check if provider is approved
+    if (!service.providerId || service.providerId.status !== 'approved') {
       return res.status(404).json({ message: "Service not found" });
     }
 
@@ -296,10 +310,14 @@ export const getServiceById = async (req, res) => {
 // CREATE a new service (provider only)
 export const createService = async (req, res) => {
   try {
-    // Verify user is a provider
+    // Verify user is a provider and is approved
     const provider = await Provider.findOne({ userId: req.user.id });
     if (!provider) {
       return res.status(403).json({ message: "You must be a registered provider to create services" });
+    }
+    
+    if (provider.status !== 'approved') {
+      return res.status(403).json({ message: "Your provider account must be approved before you can create services" });
     }
 
     // Validate required fields

@@ -73,6 +73,9 @@ const Services = () => {
         deliveryTime: service.deliveryTime,
         revisions: service.revisions,
         totalOrders: service.totalOrders || 0,
+        // Include image data
+        images: service.images || [],
+        imageUrls: service.imageUrls || [],
         provider: {
           id: service.provider?.id,
           name: service.provider?.name || 'Unknown Provider',
@@ -83,7 +86,10 @@ const Services = () => {
         rating: {
           average: service.rating?.average || 0,
           count: service.rating?.count || 0
-        }
+        },
+        // Additional fields that might be useful
+        views: service.views || 0,
+        isActive: service.isActive !== false // Default to true if not specified
       })) || [];
 
       setServices(transformedServices);
@@ -227,15 +233,15 @@ const Services = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+            <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
+            <div className="h-4 bg-muted rounded w-1/2 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
+                <div key={i} className="h-64 bg-muted rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -248,15 +254,15 @@ const Services = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-12">
             <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <X className="h-8 w-8 text-red-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load services</h3>
-            <p className="text-gray-500 mb-4">{error}</p>
+            <h3 className="text-lg font-medium text-foreground mb-2">Unable to load services</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchServices}>
               Try Again
             </Button>
@@ -268,14 +274,14 @@ const Services = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">All Services</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground mb-2">All Services</h1>
+          <p className="text-muted-foreground">
             Discover professional services from verified providers ({services.length} services available)
           </p>
         </div>
@@ -287,7 +293,7 @@ const Services = () => {
               <div className="flex flex-col lg:flex-row gap-4">
                 {/* Search */}
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Search services, skills, or keywords..."
                     value={searchTerm}
@@ -414,12 +420,12 @@ const Services = () => {
 
         {/* Results Summary */}
         <div className="flex justify-between items-center mb-6">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Showing {startIndex + 1}-{Math.min(endIndex, filteredServices.length)} of {filteredServices.length} services
           </p>
           {hasActiveFilters && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Active filters:</span>
+              <span className="text-sm text-muted-foreground">Active filters:</span>
               {searchTerm && <Badge variant="secondary">{searchTerm}</Badge>}
               {selectedCategory !== 'all' && <Badge variant="secondary">{selectedCategory}</Badge>}
               {selectedLocation !== 'all' && <Badge variant="secondary">{selectedLocation}</Badge>}
@@ -444,11 +450,11 @@ const Services = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="h-8 w-8 text-gray-400" />
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No services found</h3>
-            <p className="text-gray-500 mb-4">Try adjusting your search or filter criteria</p>
+            <h3 className="text-lg font-medium text-foreground mb-2">No services found</h3>
+            <p className="text-muted-foreground mb-4">Try adjusting your search or filter criteria</p>
             <Button onClick={clearFilters} variant="outline">
               Clear all filters
             </Button>

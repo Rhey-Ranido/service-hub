@@ -6,6 +6,7 @@ import {
   getProviderById,
   updateProvider,
   deleteProvider,
+  getMyProviderProfile,
 } from "../controllers/provider.controller.js";
 
 import { protect, restrictTo } from "../middlewares/auth.middleware.js";
@@ -19,6 +20,7 @@ router.get("/:id", getProviderById); // Now includes services and detailed info
 // Protected routes
 router.use(protect); // Auth required below
 router.post("/", createProvider); // Creates provider profile and updates user role
+router.get("/me", getMyProviderProfile);
 router.put("/me", updateProvider);
 router.delete("/:id", restrictTo("admin"), deleteProvider);
 

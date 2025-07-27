@@ -23,12 +23,14 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import ServiceEditModal from './ServiceEditModal';
 
 const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState('grid');
+  const [editingService, setEditingService] = useState(null);
 
   // Filter and sort services
   const filteredServices = services
@@ -261,6 +263,30 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
 
         {filteredServices.map((service) => (
           <Card key={service.id} className="hover:shadow-lg transition-shadow">
+            {/* Service Image */}
+            <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5 overflow-hidden">
+              {service.imageUrls && service.imageUrls.length > 0 ? (
+                <img
+                  src={service.imageUrls[0]}
+                  alt={service.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-primary/30">
+                  <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                </div>
+              )}
+              
+              {/* Image count badge */}
+              {service.imageUrls && service.imageUrls.length > 1 && (
+                <Badge variant="secondary" className="absolute top-2 right-2 bg-black/50 text-white">
+                  +{service.imageUrls.length - 1}
+                </Badge>
+              )}
+            </div>
+
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -340,7 +366,12 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
                   <Eye className="h-4 w-4 mr-1" />
                   View
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setEditingService(service)}
+                >
                   <Edit3 className="h-4 w-4 mr-1" />
                   Edit
                 </Button>
@@ -378,6 +409,18 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Edit Service Modal */}
+      {editingService && (
+        <ServiceEditModal
+          service={editingService}
+          onClose={() => setEditingService(null)}
+          onUpdate={(updatedService) => {
+            setEditingService(null);
+            onRefresh?.();
+          }}
+        />
       )}
     </div>
   );

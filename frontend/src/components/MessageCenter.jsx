@@ -474,13 +474,13 @@ const MessageCenter = () => {
       {!selectedChat ? (
         <div className="space-y-6">
           {/* Header with New Chat Button */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-4">
               <h2 className="text-xl font-semibold text-gray-900">Your Conversations</h2>
             </div>
             
             {/* Search */}
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search conversations..."
@@ -586,7 +586,7 @@ const MessageCenter = () => {
 
           {/* Existing Chat List */}
           {filteredChats.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {filteredChats.map((chat) => {
                 const otherUser = getOtherUser(chat);
                 const unreadCount = unreadCounts[chat._id] || 0;
@@ -657,9 +657,9 @@ const MessageCenter = () => {
       ) : (
         // Chat Window View
         <div className="h-[600px] border rounded-lg overflow-hidden bg-white">
-          <div className="flex h-full">
+          <div className="flex flex-col lg:flex-row h-full">
             {/* Chat List Sidebar */}
-            <div className="flex flex-col w-80 border-r border-gray-200">
+            <div className="flex flex-col w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-200">
               {/* Header */}
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-3">
@@ -675,7 +675,7 @@ const MessageCenter = () => {
               </div>
 
               {/* Chat List */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto max-h-64 lg:max-h-none">
                 {error && (
                   <Alert variant="destructive" className="m-4">
                     <AlertDescription>{error}</AlertDescription>
@@ -701,7 +701,7 @@ const MessageCenter = () => {
                           key={chat._id}
                           onClick={() => setSelectedChat(chat)}
                           className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                            isSelected ? 'bg-blue-50 border-r-2 border-primary' : ''
+                            isSelected ? 'bg-blue-50 lg:border-r-2 border-primary' : ''
                           }`}
                         >
                           <div className="flex items-start space-x-3">
@@ -756,11 +756,11 @@ const MessageCenter = () => {
                       <p className="text-xs text-gray-500">Client</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <Button variant="ghost" size="sm" className="hidden sm:flex">
                       <Phone className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="hidden sm:flex">
                       <Video className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm">
@@ -771,7 +771,7 @@ const MessageCenter = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 bg-gray-50">
                 {messages.map((message, index) => {
                   const isOwnMessage = message.sender._id === currentUser?.id;
                   const showDate = index === 0 || 
@@ -787,7 +787,7 @@ const MessageCenter = () => {
                         </div>
                       )}
                       <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        <div className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg ${
                           isOwnMessage 
                             ? 'bg-primary text-primary-foreground' 
                             : 'bg-white text-gray-900 border'
@@ -825,7 +825,7 @@ const MessageCenter = () => {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="p-2 sm:p-4 border-t border-gray-200 bg-white">
                 <div className="flex items-center space-x-2">
                   <Input
                     placeholder="Type a message..."
