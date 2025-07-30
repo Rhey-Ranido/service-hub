@@ -1,24 +1,50 @@
+/* eslint-disable no-unused-vars */
 // src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ServiceCard from "../components/ServiceCard";
+import ServiceSearch from "../components/ServiceSearch";
 import TestimonialCarousel from '../components/TestimonialCarousel';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight, Loader2, Map, Grid3X3, MapPin, Star, DollarSign } from 'lucide-react';
 
 export default function Home() {
   const navigate = useNavigate();
   const [featuredServices, setFeaturedServices] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showMap, setShowMap] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationPermission, setLocationPermission] = useState('unknown'); // unknown, granted, denied
 
   const API_BASE_URL = 'http://localhost:3000/api';
 
   const handleServiceClick = (service) => {
     // Navigate to service details page
     navigate(`/services/${service.id}`);
+  };
+
+  const handleSearchResults = (results) => {
+    setSearchResults(results);
+  };
+
+  const handleMapToggle = () => {
+    setShowMap(!showMap);
+  };
+
+  const handleLocationGranted = (location) => {
+    setUserLocation(location);
+    setLocationPermission('granted');
+  };
+
+  const handleLocationDenied = (reason) => {
+    setLocationPermission('denied');
+    console.log('Location access denied:', reason);
   };
 
   const fetchFeaturedServices = async () => {
@@ -65,13 +91,77 @@ export default function Home() {
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               Connect with verified professionals for all your service needs. From web development to home services, we've got you covered.
             </p>
+            
+
+
+            {/* Search Section */}
+            <div className="mb-8">
+              <ServiceSearch 
+                onSearchResults={handleSearchResults}
+                onMapToggle={handleMapToggle}
+                showMap={showMap}
+                userLocation={userLocation}
+                locationPermission={locationPermission}
+                onLocationGranted={handleLocationGranted}
+                onLocationDenied={handleLocationDenied}
+              />
+            </div>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && !showMap && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Search Results ({searchResults.length})
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {searchResults.map((service) => {
+                    // Calculate distance if user location is available
+                    let distance = null;
+                    if (userLocation && service.provider?.coordinates) {
+                      const [lng, lat] = service.provider.coordinates;
+                      const R = 6371; // Earth's radius in km
+                      const dLat = (lat - userLocation.lat) * Math.PI / 180;
+                      const dLon = (lng - userLocation.lng) * Math.PI / 180;
+                      const a = 
+                        Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * 
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+                      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                      distance = Math.round(R * c * 10) / 10;
+                    }
+
+                    return (
+                      <div key={service.id} className="relative">
+                        <ServiceCard 
+                          service={service}
+                          onClick={handleServiceClick}
+                        />
+                        {distance && (
+                          <Badge 
+                            variant="secondary" 
+                            className="absolute top-2 right-2 flex items-center gap-1"
+                          >
+                            <MapPin className="h-3 w-3" />
+                            {distance} km
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
                 className="text-lg px-8 py-3"
                 onClick={() => navigate("/services")}
               >
-                Browse Services
+                Browse All Services
               </Button>
               <Button 
                 variant="outline" 
@@ -139,20 +229,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-br from-muted/50 to-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">What Our Users Say</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Don't just take our word for it. Here's what real users have to say about their experience with ServiceHub.
-            </p>
-          </div>
-          
-          <TestimonialCarousel />
-        </div>
-      </section>
-
       {/* Features section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -193,6 +269,20 @@ export default function Home() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 bg-gradient-to-br from-muted/50 to-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">What Our Users Say</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Don't just take our word for it. Here's what real users have to say about their experience with ServiceHub.
+            </p>
+          </div>
+          
+          <TestimonialCarousel />
         </div>
       </section>
 

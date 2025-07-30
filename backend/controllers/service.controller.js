@@ -2,6 +2,20 @@ import mongoose from "mongoose";
 import Service from "../models/Service.js";
 import Provider from "../models/Provider.js";
 
+// Calculate distance between two points using Haversine formula
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c; // Distance in kilometers
+  return Math.round(distance * 10) / 10; // Round to 1 decimal place
+};
+
 // GET all services with advanced filtering and search
 export const getAllServices = async (req, res) => {
   try {
@@ -15,7 +29,10 @@ export const getAllServices = async (req, res) => {
       sortOrder = 'desc',
       page = 1,
       limit = 12,
-      featured
+      featured,
+      lat,
+      lng,
+      radius = 50 // Default radius in kilometers
     } = req.query;
 
     // Build filter object
@@ -50,20 +67,44 @@ export const getAllServices = async (req, res) => {
 
     // Build sort object
     const sortObj = {};
-    sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    
+    // Handle location-based sorting
+    if (sortBy === 'distance' && lat && lng) {
+      // We'll sort by distance after fetching the data
+      sortObj['rating.average'] = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    }
 
     // Calculate pagination
     const skip = (page - 1) * limit;
+
+    // Build provider match conditions
+    const providerMatch = { status: 'approved' };
+    
+    // Location-based filtering
+    if (lat && lng && radius) {
+      // Use geospatial query for nearby providers
+      providerMatch.location = {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [Number(lng), Number(lat)]
+          },
+          $maxDistance: Number(radius) * 1000 // Convert km to meters
+        }
+      };
+    } else if (location && location !== 'all') {
+      // Text-based location filtering
+      providerMatch['location.address'] = { $regex: location, $options: 'i' };
+    }
 
     // Get services with populated provider data
     const services = await Service.find(filter)
       .populate({
         path: 'providerId',
-        select: 'name location.address rating isVerified userId status',
-        match: {
-          status: 'approved', // Only show services from approved providers
-          ...(location && location !== 'all' ? { 'location.address': { $regex: location, $options: 'i' } } : {})
-        }
+        select: 'name location.address location.coordinates rating isVerified userId status',
+        match: providerMatch
       })
       .sort(sortObj)
       .skip(skip)
@@ -72,6 +113,29 @@ export const getAllServices = async (req, res) => {
 
     // Filter out services where provider didn't match location filter
     const filteredServices = services.filter(service => service.providerId);
+
+    // Calculate distances and sort by distance if requested
+    if (sortBy === 'distance' && lat && lng) {
+      filteredServices.forEach(service => {
+        if (service.providerId.location?.coordinates) {
+          const [lng1, lat1] = service.providerId.location.coordinates;
+          const distance = calculateDistance(
+            Number(lat), Number(lng),
+            lat1, lng1
+          );
+          service.distance = distance;
+        }
+      });
+
+      // Sort by distance
+      filteredServices.sort((a, b) => {
+        if (sortOrder === 'asc') {
+          return (a.distance || Infinity) - (b.distance || Infinity);
+        } else {
+          return (b.distance || Infinity) - (a.distance || Infinity);
+        }
+      });
+    }
 
     // Get total count for pagination
     const totalServices = await Service.countDocuments(filter);
@@ -97,11 +161,13 @@ export const getAllServices = async (req, res) => {
         totalOrders: service.totalOrders,
         images: service.images,
         imageUrls: imageUrls,
+        distance: service.distance,
         provider: {
           id: service.providerId.userId, // Use the User ID, not the Provider ID
           providerId: service.providerId._id, // Keep the Provider ID for reference
           name: service.providerId.name,
           location: service.providerId.location.address,
+          coordinates: service.providerId.location.coordinates,
           rating: service.providerId.rating.average,
           reviewCount: service.providerId.rating.count,
           isVerified: service.providerId.isVerified,
