@@ -1,6 +1,8 @@
 import Provider from "../models/Provider.js";
 import User from "../models/User.js";
 import Service from "../models/Service.js";
+import ProviderReview from "../models/ProviderReview.js";
+import ServiceReview from "../models/ServiceReview.js";
 
 // create a new provider profile
 export const createProvider = async (req, res) => {
@@ -110,25 +112,43 @@ export const getAllProviders = async (req, res) => {
 
     const totalProviders = await Provider.countDocuments(filter);
 
-    // Format response
-    const formattedProviders = providers.map(provider => ({
-      id: provider._id,
-      name: provider.name,
-      bio: provider.bio,
-      profileImage: provider.profileImage,
-      location: provider.location.address,
-      rating: provider.rating,
-      totalReviews: provider.totalReviews,
-      totalServices: provider.totalServices,
-      isVerified: provider.isVerified,
-      categories: provider.categories,
-      skills: provider.skills,
-      languages: provider.languages,
-      responseTime: provider.responseTime,
-      completedProjects: provider.completedProjects,
-      socialLinks: provider.socialLinks,
-      memberSince: provider.createdAt,
-      lastActive: provider.userId.lastActive
+    // Calculate real statistics for each provider
+    const formattedProviders = await Promise.all(providers.map(async (provider) => {
+      // Calculate real provider statistics from reviews
+      const providerReviews = await ProviderReview.find({ providerId: provider._id });
+      const providerRatingCount = providerReviews.length;
+      const providerRatingAverage = providerRatingCount > 0 
+        ? providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerRatingCount 
+        : 0;
+
+      // Count provider's total services
+      const providerServicesCount = await Service.countDocuments({ 
+        providerId: provider._id,
+        isActive: true 
+      });
+
+      return {
+        id: provider._id,
+        name: provider.name,
+        bio: provider.bio,
+        profileImage: provider.profileImage,
+        location: provider.location.address,
+        rating: {
+          average: providerRatingAverage,
+          count: providerRatingCount
+        },
+        totalReviews: providerRatingCount,
+        totalServices: providerServicesCount,
+        isVerified: provider.isVerified,
+        categories: provider.categories,
+        skills: provider.skills,
+        languages: provider.languages,
+        responseTime: provider.responseTime,
+        completedProjects: provider.completedProjects,
+        socialLinks: provider.socialLinks,
+        memberSince: provider.createdAt,
+        lastActive: provider.userId.lastActive
+      };
     }));
 
     res.status(200).json({
@@ -158,10 +178,49 @@ export const getProviderById = async (req, res) => {
       return res.status(404).json({ error: "Provider not found" });
     }
 
-    // Get provider's services
+    // Calculate real provider statistics from reviews
+    const providerReviews = await ProviderReview.find({ providerId: provider._id });
+    const providerRatingCount = providerReviews.length;
+    const providerRatingAverage = providerRatingCount > 0 
+      ? providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerRatingCount 
+      : 0;
+
+    // Count provider's total services
+    const providerServicesCount = await Service.countDocuments({ 
+      providerId: provider._id,
+      isActive: true 
+    });
+
+    // Get provider's services with calculated ratings
     const services = await Service.find({ providerId: id, isActive: true })
       .select('title shortDescription price category tags featured rating totalOrders images')
       .lean();
+
+    // Calculate real ratings for each service
+    const servicesWithRealRatings = await Promise.all(services.map(async (service) => {
+      const serviceReviews = await ServiceReview.find({ serviceId: service._id });
+      const serviceRatingCount = serviceReviews.length;
+      const serviceRatingAverage = serviceRatingCount > 0 
+        ? serviceReviews.reduce((sum, review) => sum + review.rating, 0) / serviceRatingCount 
+        : 0;
+
+      return {
+        id: service._id,
+        title: service.title,
+        description: service.shortDescription,
+        price: service.price.amount,
+        priceUnit: service.price.unit,
+        category: service.category,
+        tags: service.tags,
+        featured: service.featured,
+        rating: {
+          average: serviceRatingAverage,
+          count: serviceRatingCount
+        },
+        totalOrders: service.totalOrders,
+        images: service.images
+      };
+    }));
 
     // Format response
     const formattedProvider = {
@@ -170,9 +229,12 @@ export const getProviderById = async (req, res) => {
       bio: provider.bio,
       profileImage: provider.profileImage,
       location: provider.location.address,
-      rating: provider.rating,
-      totalReviews: provider.totalReviews,
-      totalServices: provider.totalServices,
+      rating: {
+        average: providerRatingAverage,
+        count: providerRatingCount
+      },
+      totalReviews: providerRatingCount,
+      totalServices: providerServicesCount,
       isVerified: provider.isVerified,
       status: provider.status,
       categories: provider.categories,
@@ -189,19 +251,7 @@ export const getProviderById = async (req, res) => {
         lastName: provider.userId.lastName,
         isVerified: provider.userId.isVerified
       },
-      services: services.map(service => ({
-        id: service._id,
-        title: service.title,
-        description: service.shortDescription,
-        price: service.price.amount,
-        priceUnit: service.price.unit,
-        category: service.category,
-        tags: service.tags,
-        featured: service.featured,
-        rating: service.rating,
-        totalOrders: service.totalOrders,
-        images: service.images
-      }))
+      services: servicesWithRealRatings
     };
 
     res.status(200).json(formattedProvider);

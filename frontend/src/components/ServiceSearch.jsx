@@ -681,7 +681,7 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                             <div className="space-y-1 mb-3">
                               <div className="flex items-center gap-2 text-xs">
                                 <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                                <span>{service.rating?.average || service.provider?.rating || 0}</span>
+                                <span>{(service.rating?.average || service.provider?.rating || 0).toFixed(1)}</span>
                                 <DollarSign className="h-3 w-3 text-green-600" />
                                 <span>${service.price?.amount || service.price || 0}</span>
                               </div>
@@ -734,7 +734,7 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                    <span>{selectedService.rating?.average || selectedService.provider?.rating || 0}</span>
+                    <span>{(selectedService.rating?.average || selectedService.provider?.rating || 0).toFixed(1)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <DollarSign className="h-4 w-4 text-green-600" />

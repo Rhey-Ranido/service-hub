@@ -1,5 +1,6 @@
 import ProviderReview from "../models/ProviderReview.js";
 import Provider from "../models/Provider.js";
+import { validateProviderReview } from "../utils/validateReview.js";
 
 // @desc Get all reviews for a specific provider
 // @route GET /api/provider-reviews/:providerId
@@ -36,6 +37,15 @@ export const createProviderReview = async (req, res) => {
   const userId = req.user._id;
 
   try {
+    // Validate input data
+    const { error } = validateProviderReview({ rating, comment });
+    if (error) {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        error: error.details[0].message 
+      });
+    }
+
     // Ensure provider exists
     const provider = await Provider.findById(providerId);
     if (!provider) {
@@ -57,6 +67,12 @@ export const createProviderReview = async (req, res) => {
       comment,
     });
 
+    // Update provider rating statistics using the static method
+    await Provider.updateRatingStats(providerId);
+
+    // Populate user information for response
+    await newReview.populate("userId", "name");
+
     res.status(201).json(newReview);
   } catch (error) {
     res
@@ -72,6 +88,15 @@ export const updateProviderReview = async (req, res) => {
     const { reviewId } = req.params;
     const { rating, comment } = req.body;
     const userId = req.user._id;
+
+    // Validate input data
+    const { error } = validateProviderReview({ rating, comment });
+    if (error) {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        error: error.details[0].message 
+      });
+    }
 
     // Find review by ID
     const review = await ProviderReview.findById(reviewId);
@@ -92,6 +117,11 @@ export const updateProviderReview = async (req, res) => {
     if (comment !== undefined) review.comment = comment;
 
     await review.save();
+
+    // Update provider rating statistics using the static method
+    await Provider.updateRatingStats(review.providerId);
+
+    await review.populate("userId", "name");
 
     res.status(200).json({ message: "Review updated successfully", review });
   } catch (error) {
@@ -119,7 +149,11 @@ export const deleteProviderReview = async (req, res) => {
         .json({ message: "Unauthorized to delete this review" });
     }
 
+    const providerId = review.providerId;
     await review.deleteOne();
+
+    // Update provider rating statistics using the static method
+    await Provider.updateRatingStats(providerId);
 
     res.status(200).json({ message: "Review deleted successfully" });
   } catch (error) {

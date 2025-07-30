@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import User from '../models/User.js';
 import Provider from '../models/Provider.js';
 import Service from '../models/Service.js';
+import ServiceReview from '../models/ServiceReview.js';
+import ProviderReview from '../models/ProviderReview.js';
 
 dotenv.config();
 
@@ -19,6 +21,8 @@ const seedData = async () => {
     await User.deleteMany({});
     await Provider.deleteMany({});
     await Service.deleteMany({});
+    await ServiceReview.deleteMany({});
+    await ProviderReview.deleteMany({});
     console.log('🗑️ Cleared existing data');
 
     // Create sample users based on friends' data
@@ -77,6 +81,38 @@ const seedData = async () => {
         role: 'client',
         firstName: 'Test',
         lastName: 'Client',
+        isVerified: true
+      },
+      {
+        email: 'sarah.johnson@example.com',
+        password: await bcrypt.hash('password123', 12),
+        role: 'client',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        isVerified: true
+      },
+      {
+        email: 'michael.chen@example.com',
+        password: await bcrypt.hash('password123', 12),
+        role: 'client',
+        firstName: 'Michael',
+        lastName: 'Chen',
+        isVerified: true
+      },
+      {
+        email: 'emma.rodriguez@example.com',
+        password: await bcrypt.hash('password123', 12),
+        role: 'client',
+        firstName: 'Emma',
+        lastName: 'Rodriguez',
+        isVerified: true
+      },
+      {
+        email: 'david.kim@example.com',
+        password: await bcrypt.hash('password123', 12),
+        role: 'client',
+        firstName: 'David',
+        lastName: 'Kim',
         isVerified: true
       },
       {
@@ -170,10 +206,10 @@ const seedData = async () => {
           coordinates: generateNearbyCoordinates(centralLat, centralLng, 0.9)
         },
         rating: {
-          average: 4.7,
-          count: 18
+          average: 0,
+          count: 0
         },
-        totalReviews: 18,
+        totalReviews: 0,
         totalServices: 1,
         isVerified: true,
         status: 'approved',
@@ -196,10 +232,10 @@ const seedData = async () => {
           coordinates: generateNearbyCoordinates(centralLat, centralLng, 1.2)
         },
         rating: {
-          average: 4.9,
-          count: 42
+          average: 0,
+          count: 0
         },
-        totalReviews: 42,
+        totalReviews: 0,
         totalServices: 1,
         isVerified: true,
         status: 'approved',
@@ -222,10 +258,10 @@ const seedData = async () => {
           coordinates: generateNearbyCoordinates(centralLat, centralLng, 0.8)
         },
         rating: {
-          average: 4.6,
-          count: 28
+          average: 0,
+          count: 0
         },
-        totalReviews: 28,
+        totalReviews: 0,
         totalServices: 1,
         isVerified: true,
         status: 'approved',
@@ -248,10 +284,10 @@ const seedData = async () => {
           coordinates: generateNearbyCoordinates(centralLat, centralLng, 1.4)
         },
         rating: {
-          average: 4.8,
-          count: 35
+          average: 0,
+          count: 0
         },
-        totalReviews: 35,
+        totalReviews: 0,
         totalServices: 1,
         isVerified: true,
         status: 'approved',
@@ -298,8 +334,8 @@ const seedData = async () => {
           }
         ],
         rating: {
-          average: 4.8,
-          count: 24
+          average: 0,
+          count: 0
         },
         totalOrders: 156,
         packages: [
@@ -356,8 +392,8 @@ const seedData = async () => {
           }
         ],
         rating: {
-          average: 4.9,
-          count: 31
+          average: 0,
+          count: 0
         },
         totalOrders: 89,
         packages: [
@@ -404,8 +440,8 @@ const seedData = async () => {
         revisions: 2,
         requirements: ['Content brief and target keywords', 'Brand voice guidelines', 'Target audience information'],
         rating: {
-          average: 4.7,
-          count: 18
+          average: 0,
+          count: 0
         },
         totalOrders: 67,
         packages: [
@@ -452,8 +488,8 @@ const seedData = async () => {
         revisions: 1,
         requirements: ['Service preferences', 'Skin/hair type information', 'Allergies or sensitivities'],
         rating: {
-          average: 4.9,
-          count: 42
+          average: 0,
+          count: 0
         },
         totalOrders: 234,
         packages: [
@@ -500,8 +536,8 @@ const seedData = async () => {
         revisions: 1,
         requirements: ['Event details and preferences', 'Number of participants', 'Venue information'],
         rating: {
-          average: 4.6,
-          count: 28
+          average: 0,
+          count: 0
         },
         totalOrders: 145,
         packages: [
@@ -548,8 +584,8 @@ const seedData = async () => {
         revisions: 1,
         requirements: ['Farm location and size', 'Current livestock information', 'Business goals'],
         rating: {
-          average: 4.8,
-          count: 35
+          average: 0,
+          count: 0
         },
         totalOrders: 78,
         packages: [
@@ -581,14 +617,93 @@ const seedData = async () => {
       }
     ];
 
-    await Service.insertMany(services);
+    const createdServices = await Service.insertMany(services);
     console.log('🛠️ Created services');
+
+    // Create sample reviews for services and providers
+    console.log('📝 Creating sample reviews...');
+    
+    // Sample review comments for variety
+    const sampleComments = [
+      'Excellent work! Very professional and delivered exactly what I needed.',
+      'Great communication throughout the project. Highly recommended!',
+      'Quality work and fast delivery. Will definitely work with again.',
+      'Very skilled and knowledgeable. Exceeded my expectations.',
+      'Professional service with attention to detail. Great experience!',
+      'Reliable and trustworthy. Delivered on time and within budget.',
+      'Outstanding quality and customer service. Highly satisfied!',
+      'Very responsive and easy to work with. Great results!',
+      'Skilled professional who delivers quality work consistently.',
+      'Excellent communication and timely delivery. Highly recommended!',
+      'Great attention to detail and professional approach.',
+      'Very satisfied with the work quality and service.',
+      'Reliable provider who understands client needs perfectly.',
+      'Professional, punctual, and delivers excellent results.',
+      'Great experience working together. Highly skilled provider!'
+    ];
+
+    // Create service reviews
+    const serviceReviews = [];
+    for (let i = 0; i < createdServices.length; i++) {
+      const service = createdServices[i];
+      const reviewCount = 3; // Create 3 reviews per service for testing
+      
+      // Create reviews for each service
+      for (let j = 0; j < reviewCount; j++) {
+        const rating = Math.floor(Math.random() * 2) + 4; // 4-5 stars mostly
+        const comment = sampleComments[Math.floor(Math.random() * sampleComments.length)];
+        const clientIndex = 6 + j; // Use different clients (6-10)
+        
+        serviceReviews.push({
+          serviceId: service._id,
+          userId: createdUsers[clientIndex]._id, // Use different client users
+          rating: rating,
+          comment: comment,
+          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) // Random date within last 30 days
+        });
+      }
+    }
+
+    // Create provider reviews
+    const providerReviews = [];
+    for (let i = 0; i < createdProviders.length; i++) {
+      const provider = createdProviders[i];
+      const reviewCount = 3; // Create 3 reviews per provider for testing
+      
+      // Create reviews for each provider
+      for (let j = 0; j < reviewCount; j++) {
+        const rating = Math.floor(Math.random() * 2) + 4; // 4-5 stars mostly
+        const comment = sampleComments[Math.floor(Math.random() * sampleComments.length)];
+        const clientIndex = 6 + j; // Use different clients (6-10)
+        
+        providerReviews.push({
+          providerId: provider._id,
+          userId: createdUsers[clientIndex]._id, // Use different client users
+          rating: rating,
+          comment: comment,
+          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) // Random date within last 30 days
+        });
+      }
+    }
+
+    // Insert reviews
+    await ServiceReview.insertMany(serviceReviews);
+    await ProviderReview.insertMany(providerReviews);
+    console.log(`📝 Created ${serviceReviews.length} service reviews and ${providerReviews.length} provider reviews`);
+    
+    // Update all ratings after creating reviews
+    console.log('📊 Updating all ratings...');
+    await Service.updateAllRatingStats();
+    await Provider.updateAllRatingStats();
+    console.log('✅ All ratings updated');
 
     console.log('✅ Database seeding completed successfully!');
     console.log('\n📊 Summary:');
     console.log(`👥 Users created: ${createdUsers.length}`);
     console.log(`🏢 Providers created: ${createdProviders.length}`);
     console.log(`🛠️ Services created: ${services.length}`);
+    console.log(`📝 Service reviews created: ${serviceReviews.length}`);
+    console.log(`📝 Provider reviews created: ${providerReviews.length}`);
     console.log('\n🔐 Test credentials:');
     console.log('Provider: jerson.caibog@example.com / password123');
     console.log('Client: client@example.com / password123');

@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import Service from "../models/Service.js";
 import Provider from "../models/Provider.js";
+import ServiceReview from "../models/ServiceReview.js";
+import ProviderReview from "../models/ProviderReview.js";
 
 // Calculate distance between two points using Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -140,8 +142,22 @@ export const getAllServices = async (req, res) => {
     // Get total count for pagination
     const totalServices = await Service.countDocuments(filter);
     
-    // Format response to match frontend expectations
-    const formattedServices = filteredServices.map(service => {
+    // Calculate real statistics for each service
+    const formattedServices = await Promise.all(filteredServices.map(async (service) => {
+      // Calculate real service statistics from reviews
+      const serviceReviews = await ServiceReview.find({ serviceId: service._id });
+      const serviceRatingCount = serviceReviews.length;
+      const serviceRatingAverage = serviceRatingCount > 0 
+        ? serviceReviews.reduce((sum, review) => sum + review.rating, 0) / serviceRatingCount 
+        : 0;
+
+      // Calculate real provider statistics from reviews
+      const providerReviews = await ProviderReview.find({ providerId: service.providerId._id });
+      const providerRatingCount = providerReviews.length;
+      const providerRatingAverage = providerRatingCount > 0 
+        ? providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerRatingCount 
+        : 0;
+
       const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
       const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
       const providerProfileImageUrl = service.providerId.profileImage 
@@ -157,7 +173,10 @@ export const getAllServices = async (req, res) => {
         tags: service.tags,
         category: service.category,
         featured: service.featured,
-        rating: service.rating,
+        rating: {
+          average: serviceRatingAverage,
+          count: serviceRatingCount
+        },
         totalOrders: service.totalOrders,
         images: service.images,
         imageUrls: imageUrls,
@@ -168,15 +187,15 @@ export const getAllServices = async (req, res) => {
           name: service.providerId.name,
           location: service.providerId.location.address,
           coordinates: service.providerId.location.coordinates,
-          rating: service.providerId.rating.average,
-          reviewCount: service.providerId.rating.count,
+          rating: providerRatingAverage,
+          reviewCount: providerRatingCount,
           isVerified: service.providerId.isVerified,
           profileImage: service.providerId.profileImage,
           profileImageUrl: providerProfileImageUrl
         },
         createdAt: service.createdAt
       };
-    });
+    }));
 
     res.status(200).json({
       services: formattedServices,
@@ -304,6 +323,30 @@ export const getServiceById = async (req, res) => {
     // Increment view count
     await Service.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
+    // Calculate real service statistics from reviews
+    const serviceReviews = await ServiceReview.find({ serviceId: service._id });
+    const serviceRatingCount = serviceReviews.length;
+    const serviceRatingAverage = serviceRatingCount > 0 
+      ? serviceReviews.reduce((sum, review) => sum + review.rating, 0) / serviceRatingCount 
+      : 0;
+
+
+
+    // Calculate real provider statistics from reviews
+    const providerReviews = await ProviderReview.find({ providerId: service.providerId._id });
+    const providerRatingCount = providerReviews.length;
+    const providerRatingAverage = providerRatingCount > 0 
+      ? providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerRatingCount 
+      : 0;
+
+
+
+    // Count provider's total services
+    const providerServicesCount = await Service.countDocuments({ 
+      providerId: service.providerId._id,
+      isActive: true 
+    });
+
     // Generate image URLs
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
     const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
@@ -328,7 +371,10 @@ export const getServiceById = async (req, res) => {
       requirements: service.requirements,
       faqs: service.faqs,
       packages: service.packages,
-      rating: service.rating,
+      rating: {
+        average: serviceRatingAverage,
+        count: serviceRatingCount
+      },
       totalOrders: service.totalOrders,
       views: service.views + 1,
       provider: {
@@ -339,9 +385,12 @@ export const getServiceById = async (req, res) => {
         profileImage: service.providerId.profileImage,
         profileImageUrl: providerProfileImageUrl,
         location: service.providerId.location.address,
-        rating: service.providerId.rating,
-        totalReviews: service.providerId.totalReviews,
-        totalServices: service.providerId.totalServices,
+        rating: {
+          average: providerRatingAverage,
+          count: providerRatingCount
+        },
+        totalReviews: providerRatingCount,
+        totalServices: providerServicesCount,
         isVerified: service.providerId.isVerified,
         responseTime: service.providerId.responseTime,
         completedProjects: service.providerId.completedProjects,
@@ -406,10 +455,8 @@ export const createService = async (req, res) => {
 
     const newService = await Service.create(serviceData);
 
-    // Update provider's total services count
-    await Provider.findByIdAndUpdate(provider._id, { 
-      $inc: { totalServices: 1 } 
-    });
+    // Update provider's total services count using the static method
+    await Provider.updateTotalServices(provider._id);
 
     const populatedService = await newService.populate({
       path: 'providerId',
@@ -476,7 +523,11 @@ export const deleteService = async (req, res) => {
         .json({ message: "Not authorized to delete this service" });
     }
 
+    const providerId = service.providerId;
     await service.deleteOne();
+
+    // Update provider's total services count after deletion
+    await Provider.updateTotalServices(providerId);
 
     res.status(200).json({
       message: "Service deleted successfully",

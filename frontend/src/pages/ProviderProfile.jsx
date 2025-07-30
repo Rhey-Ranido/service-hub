@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ProviderReviews from '../components/ProviderReviews';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -512,9 +513,10 @@ const ProviderProfile = () => {
                   </TabsContent>
                   
                   <TabsContent value="reviews" className="p-6">
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">Reviews feature coming soon...</p>
-                    </div>
+                    <ProviderReviews 
+                      providerId={provider.id} 
+                      onReviewUpdate={fetchProviderProfile}
+                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>

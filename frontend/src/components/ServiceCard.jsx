@@ -183,7 +183,7 @@ const ServiceCard = ({ service, onClick }) => {
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
               <span className="text-sm font-medium text-foreground">
-                {service.provider?.rating || service.rating?.average || 0}
+                {(service.provider?.rating || service.rating?.average || 0).toFixed(1)}
               </span>
               <span className="text-xs text-muted-foreground">
                 ({service.provider?.reviewCount || service.rating?.count || 0})

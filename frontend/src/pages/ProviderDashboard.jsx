@@ -508,7 +508,7 @@ const ProviderDashboard = () => {
                                 </span>
                                 <div className="flex items-center gap-1">
                                   <Star className="h-4 w-4 text-yellow-400" />
-                                  <span className="text-sm">{service.rating?.average || 0}</span>
+                                  <span className="text-sm">{(service.rating?.average || 0).toFixed(1)}</span>
                                 </div>
                                 <span className="text-sm text-gray-600">
                                   {service.totalOrders} orders

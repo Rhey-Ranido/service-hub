@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ServiceReviews from '../components/ServiceReviews';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +42,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
-  Pause
+  Pause,
+  Linkedin,
+  Twitter,
+  Github
 } from 'lucide-react';
 
 const ServiceDetails = () => {
@@ -75,10 +79,6 @@ const ServiceDetails = () => {
       
       const data = await response.json();
       console.log('Service details fetched:', data);
-      console.log('Service ID:', data.id, 'Type:', typeof data.id);
-      console.log('Provider data:', data.provider);
-      console.log('Provider ID:', data.provider?.id, 'Type:', typeof data.provider?.id);
-      console.log('Provider ID length:', data.provider?.id?.length);
       setService(data);
     } catch (err) {
       console.error('Error fetching service details:', err);
@@ -395,16 +395,16 @@ const ServiceDetails = () => {
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-400" />
-                        <span>{service.rating.average.toFixed(1)}</span>
-                        <span>({service.rating.count} reviews)</span>
+                        <span>{service.rating?.average?.toFixed(1) || '0.0'}</span>
+                        <span>({service.rating?.count || 0} reviews)</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        <span>{service.totalOrders} orders</span>
+                        <span>{service.totalOrders || 0} orders</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
-                        <span>{service.views} views</span>
+                        <span>{service.views || 0} views</span>
                       </div>
                     </div>
                   </div>
@@ -438,11 +438,12 @@ const ServiceDetails = () => {
             <Card>
               <CardContent className="p-0">
                 <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="packages">Packages</TabsTrigger>
                     <TabsTrigger value="requirements">Requirements</TabsTrigger>
                     <TabsTrigger value="faq">FAQ</TabsTrigger>
+                    <TabsTrigger value="reviews">Reviews</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="overview" className="p-6">
@@ -476,6 +477,96 @@ const ServiceDetails = () => {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Service Statistics - Moved from sidebar */}
+                    <div className="mt-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Service Statistics</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-primary">{service.rating?.average?.toFixed(1) || '0.0'}</div>
+                              <div className="text-sm text-gray-600">Rating</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-primary">{service.rating?.count || 0}</div>
+                              <div className="text-sm text-gray-600">Reviews</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-primary">{service.totalOrders || 0}</div>
+                              <div className="text-sm text-gray-600">Orders</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-primary">{service.views || 0}</div>
+                              <div className="text-sm text-gray-600">Views</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {/* Provider Skills - Moved from sidebar */}
+                    {service.provider.skills && service.provider.skills.length > 0 && (
+                      <div className="mt-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Provider Skills</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                              {service.provider.skills.map((skill, index) => (
+                                <Badge key={index} variant="secondary">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                    
+                    {/* Provider Categories */}
+                    {service.provider.categories && service.provider.categories.length > 0 && (
+                      <div className="mt-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Provider Categories</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                              {service.provider.categories.map((category, index) => (
+                                <Badge key={index} variant="outline">
+                                  {category}
+                                </Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                    
+                    {/* Provider Languages */}
+                    {service.provider.languages && service.provider.languages.length > 0 && (
+                      <div className="mt-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Languages</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                              {service.provider.languages.map((language, index) => (
+                                <Badge key={index} variant="outline">
+                                  <Languages className="h-3 w-3 mr-1" />
+                                  {language}
+                                </Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
                   </TabsContent>
                   
                   <TabsContent value="packages" className="p-6">
@@ -557,6 +648,17 @@ const ServiceDetails = () => {
                       <p className="text-gray-500 text-center py-8">No FAQ available</p>
                     )}
                   </TabsContent>
+                  
+                  <TabsContent value="reviews" className="p-6">
+                    <ServiceReviews 
+                      serviceId={service.id} 
+                      onReviewUpdate={async () => {
+                        // Add a small delay to ensure backend has updated the statistics
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        await fetchServiceDetails();
+                      }}
+                    />
+                  </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
@@ -618,8 +720,8 @@ const ServiceDetails = () => {
                     <h4 className="font-semibold">{service.provider.name}</h4>
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Star className="h-4 w-4 text-yellow-400" />
-                      <span>{service.provider.rating.average.toFixed(1)}</span>
-                      <span>({service.provider.rating.count} reviews)</span>
+                      <span>{service.provider.rating?.average?.toFixed(1) || '0.0'}</span>
+                      <span>({service.provider.rating?.count || 0} reviews)</span>
                     </div>
                   </div>
                 </div>
@@ -627,25 +729,70 @@ const ServiceDetails = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-gray-500" />
-                    <span>{service.provider.location}</span>
+                    <span>{service.provider.location || 'Location not specified'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-gray-500" />
-                    <span>{service.provider.totalServices} services</span>
+                    <span>{service.provider.totalServices || 0} services</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <AwardIcon className="h-4 w-4 text-gray-500" />
-                    <span>{service.provider.completedProjects} projects completed</span>
+                    <span>{service.provider.completedProjects || 0} projects completed</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ClockIcon className="h-4 w-4 text-gray-500" />
-                    <span>Response time: {service.provider.responseTime}</span>
+                    <span>Response time: {service.provider.responseTime || 'Not specified'}</span>
                   </div>
+                  {service.provider.memberSince && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span>Member since {formatDate(service.provider.memberSince)}</span>
+                    </div>
+                  )}
+                  {service.provider.isVerified && (
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-green-500" />
+                      <span className="text-green-600">Verified Provider</span>
+                    </div>
+                  )}
                 </div>
                 
                 {service.provider.bio && (
                   <div className="mt-4 pt-4 border-t">
                     <p className="text-sm text-gray-600">{service.provider.bio}</p>
+                  </div>
+                )}
+                
+                {/* Social Links */}
+                {service.provider.socialLinks && Object.keys(service.provider.socialLinks).some(key => service.provider.socialLinks[key]) && (
+                  <div className="mt-4 pt-4 border-t">
+                    <h5 className="text-sm font-medium mb-2">Social Links</h5>
+                    <div className="flex gap-2">
+                      {service.provider.socialLinks.website && (
+                        <Button variant="outline" size="sm" onClick={() => window.open(service.provider.socialLinks.website, '_blank')}>
+                          <Globe className="h-3 w-3 mr-1" />
+                          Website
+                        </Button>
+                      )}
+                      {service.provider.socialLinks.linkedin && (
+                        <Button variant="outline" size="sm" onClick={() => window.open(service.provider.socialLinks.linkedin, '_blank')}>
+                          <Linkedin className="h-3 w-3 mr-1" />
+                          LinkedIn
+                        </Button>
+                      )}
+                      {service.provider.socialLinks.twitter && (
+                        <Button variant="outline" size="sm" onClick={() => window.open(service.provider.socialLinks.twitter, '_blank')}>
+                          <Twitter className="h-3 w-3 mr-1" />
+                          Twitter
+                        </Button>
+                      )}
+                      {service.provider.socialLinks.github && (
+                        <Button variant="outline" size="sm" onClick={() => window.open(service.provider.socialLinks.github, '_blank')}>
+                          <Github className="h-3 w-3 mr-1" />
+                          GitHub
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
                 
@@ -662,50 +809,7 @@ const ServiceDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Provider Skills */}
-            {service.provider.skills && service.provider.skills.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Skills</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {service.provider.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
-            {/* Service Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Service Statistics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Rating</span>
-                    <span className="font-semibold">{service.rating.average.toFixed(1)}/5</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Reviews</span>
-                    <span className="font-semibold">{service.rating.count}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Orders</span>
-                    <span className="font-semibold">{service.totalOrders}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Views</span>
-                    <span className="font-semibold">{service.views}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

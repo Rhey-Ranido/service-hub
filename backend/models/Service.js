@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
+// Import the ServiceReview model to avoid circular dependency issues
+import ServiceReview from "./ServiceReview.js";
+
 const serviceSchema = new Schema(
   {
     providerId: {
@@ -48,5 +51,34 @@ const serviceSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Static method to update service rating statistics
+serviceSchema.statics.updateRatingStats = async function(serviceId) {
+  const reviews = await ServiceReview.find({ serviceId });
+  const count = reviews.length;
+  const average = count > 0 
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / count 
+    : 0;
+  
+  await this.findByIdAndUpdate(serviceId, {
+    'rating.average': Math.round(average * 10) / 10, // Round to 1 decimal place
+    'rating.count': count
+  });
+  
+  return { average: Math.round(average * 10) / 10, count };
+};
+
+// Static method to update all service ratings (for data migration)
+serviceSchema.statics.updateAllRatingStats = async function() {
+  const services = await this.find({});
+  const results = [];
+  
+  for (const service of services) {
+    const result = await this.updateRatingStats(service._id);
+    results.push({ serviceId: service._id, ...result });
+  }
+  
+  return results;
+};
 
 export default mongoose.model("Service", serviceSchema);
