@@ -9,7 +9,6 @@ const providerSchema = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true },
     bio: { type: String },
-    profileImage: { type: String },
     location: {
       address: { type: String, required: true }, // "San Francisco, CA"
       type: {

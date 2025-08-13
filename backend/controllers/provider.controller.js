@@ -104,7 +104,7 @@ export const getAllProviders = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const providers = await Provider.find(filter)
-      .populate('userId', 'email firstName lastName isVerified lastActive')
+      .populate('userId', 'email firstName lastName isVerified lastActive profileImage')
       .sort(sortObj)
       .skip(skip)
       .limit(Number(limit))
@@ -131,7 +131,8 @@ export const getAllProviders = async (req, res) => {
         id: provider._id,
         name: provider.name,
         bio: provider.bio,
-        profileImage: provider.profileImage,
+        profileImage: provider.userId.profileImage,
+        profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null,
         location: provider.location.address,
         rating: {
           average: providerRatingAverage,
@@ -172,7 +173,7 @@ export const getProviderById = async (req, res) => {
     const { id } = req.params;
 
     const provider = await Provider.findById(id)
-      .populate('userId', 'email firstName lastName isVerified lastActive');
+      .populate('userId', 'email firstName lastName isVerified lastActive profileImage');
 
     if (!provider) {
       return res.status(404).json({ error: "Provider not found" });
@@ -227,7 +228,8 @@ export const getProviderById = async (req, res) => {
       id: provider._id,
       name: provider.name,
       bio: provider.bio,
-      profileImage: provider.profileImage,
+      profileImage: provider.userId.profileImage,
+      profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null,
       location: provider.location.address,
       rating: {
         average: providerRatingAverage,
@@ -249,9 +251,10 @@ export const getProviderById = async (req, res) => {
         email: provider.userId.email,
         firstName: provider.userId.firstName,
         lastName: provider.userId.lastName,
-        isVerified: provider.userId.isVerified
-      },
-      services: servicesWithRealRatings
+        isVerified: provider.userId.isVerified,
+        profileImage: provider.userId.profileImage,
+        profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null
+      }
     };
 
     res.status(200).json(formattedProvider);
@@ -285,12 +288,19 @@ export const updateProvider = async (req, res) => {
 // get current user's provider profile
 export const getMyProviderProfile = async (req, res) => {
   try {
+    console.log('🔍 getMyProviderProfile called');
+    console.log('🔍 req.user:', req.user);
+    
     const userId = req.user.id;
+    console.log('🔍 userId:', userId);
     
     const provider = await Provider.findOne({ userId })
-      .populate('userId', 'email firstName lastName isVerified');
+      .populate('userId', 'email firstName lastName isVerified profileImage');
+    
+    console.log('🔍 provider found:', !!provider);
 
     if (!provider) {
+      console.log('🔍 No provider profile found for user:', userId);
       return res.status(404).json({ message: "Provider profile not found" });
     }
 
@@ -298,7 +308,8 @@ export const getMyProviderProfile = async (req, res) => {
       id: provider._id,
       name: provider.name,
       bio: provider.bio,
-      profileImage: provider.profileImage,
+      profileImage: provider.userId.profileImage,
+      profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null,
       location: provider.location,
       status: provider.status,
       categories: provider.categories,
@@ -321,11 +332,14 @@ export const getMyProviderProfile = async (req, res) => {
         email: provider.userId.email,
         firstName: provider.userId.firstName,
         lastName: provider.userId.lastName,
-        isVerified: provider.userId.isVerified
+        isVerified: provider.userId.isVerified,
+        profileImage: provider.userId.profileImage,
+        profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null
       }
     });
   } catch (error) {
-    console.error("Error getting provider profile:", error);
+    console.error("❌ Error getting provider profile:", error);
+    console.error("❌ Error stack:", error.stack);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

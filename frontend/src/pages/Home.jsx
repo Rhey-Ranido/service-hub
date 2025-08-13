@@ -62,6 +62,22 @@ export default function Home() {
       const data = await response.json();
       console.log('Featured services:', data);
       
+      // Log the featured services to see the data structure
+      console.log('🏠 Home page - Featured services data:');
+      if (data.services && data.services.length > 0) {
+        data.services.forEach((service, index) => {
+          console.log(`Featured Service ${index + 1}: "${service.title}"`);
+          console.log(`  - Provider: ${service.provider?.name}`);
+          console.log(`  - Provider ID: ${service.provider?.id}`);
+          console.log(`  - Profile Image: ${service.provider?.profileImage}`);
+          console.log(`  - Profile Image URL: ${service.provider?.profileImageUrl}`);
+          console.log(`  - Has Profile Image: ${!!service.provider?.profileImageUrl}`);
+          console.log('  ---');
+        });
+      } else {
+        console.log('No featured services found');
+      }
+      
       // Use the services directly from the backend
       setFeaturedServices(data.services || []);
     } catch (err) {

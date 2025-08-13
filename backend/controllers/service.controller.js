@@ -101,12 +101,17 @@ export const getAllServices = async (req, res) => {
       providerMatch['location.address'] = { $regex: location, $options: 'i' };
     }
 
-    // Get services with populated provider data
+    // Get services with populated provider data and user data
     const services = await Service.find(filter)
       .populate({
         path: 'providerId',
         select: 'name location.address location.coordinates rating isVerified userId status',
-        match: providerMatch
+        match: providerMatch,
+        populate: {
+          path: 'userId',
+          select: 'profileImage firstName lastName',
+          model: 'User'
+        }
       })
       .sort(sortObj)
       .skip(skip)
@@ -160,8 +165,8 @@ export const getAllServices = async (req, res) => {
 
       const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
       const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
-      const providerProfileImageUrl = service.providerId.profileImage 
-        ? `${baseUrl}/${service.providerId.profileImage}` 
+      const userProfileImageUrl = service.providerId.userId?.profileImage 
+        ? `${baseUrl}/${service.providerId.userId.profileImage}` 
         : null;
 
       return {
@@ -190,8 +195,8 @@ export const getAllServices = async (req, res) => {
           rating: providerRatingAverage,
           reviewCount: providerRatingCount,
           isVerified: service.providerId.isVerified,
-          profileImage: service.providerId.profileImage,
-          profileImageUrl: providerProfileImageUrl
+          profileImage: service.providerId.userId?.profileImage,
+          profileImageUrl: userProfileImageUrl
         },
         createdAt: service.createdAt
       };
@@ -228,10 +233,41 @@ export const getAllServicesByProviderId = async (req, res) => {
     }
 
     const services = await Service.find({ providerId })
-      .populate("providerId", "-__v userId")
+      .populate({
+        path: 'providerId',
+        select: 'name location rating isVerified userId',
+        populate: {
+          path: 'userId',
+          select: 'profileImage firstName lastName',
+          model: 'User'
+        }
+      })
       .lean();
 
-    res.status(200).json(services);
+    // Format services to include provider profile image
+    const formattedServices = services.map(service => {
+      const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
+      const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
+      const userProfileImageUrl = service.providerId.userId?.profileImage 
+        ? `${baseUrl}/${service.providerId.userId.profileImage}` 
+        : null;
+
+      return {
+        ...service,
+        imageUrls,
+        provider: {
+          id: service.providerId._id,
+          name: service.providerId.name,
+          location: service.providerId.location,
+          rating: service.providerId.rating,
+          isVerified: service.providerId.isVerified,
+          profileImage: service.providerId.userId?.profileImage,
+          profileImageUrl: userProfileImageUrl
+        }
+      };
+    });
+
+    res.status(200).json(formattedServices);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -250,7 +286,12 @@ export const getMyServices = async (req, res) => {
     const services = await Service.find({ providerId: provider._id })
       .populate({
         path: 'providerId',
-        select: 'name location.address rating isVerified userId'
+        select: 'name location.address rating isVerified userId',
+        populate: {
+          path: 'userId',
+          select: 'profileImage firstName lastName',
+          model: 'User'
+        }
       })
       .sort({ createdAt: -1 })
       .lean();
@@ -259,6 +300,9 @@ export const getMyServices = async (req, res) => {
     const formattedServices = services.map(service => {
       const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
       const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
+      const userProfileImageUrl = service.providerId.userId?.profileImage 
+        ? `${baseUrl}/${service.providerId.userId.profileImage}` 
+        : null;
 
       return {
         id: service._id,
@@ -281,7 +325,16 @@ export const getMyServices = async (req, res) => {
         totalOrders: service.totalOrders,
         views: service.views,
         createdAt: service.createdAt,
-        updatedAt: service.updatedAt
+        updatedAt: service.updatedAt,
+        provider: {
+          id: service.providerId.userId,
+          name: service.providerId.name,
+          location: service.providerId.location.address,
+          rating: service.providerId.rating,
+          isVerified: service.providerId.isVerified,
+          profileImage: service.providerId.userId?.profileImage,
+          profileImageUrl: userProfileImageUrl
+        }
       };
     });
 
@@ -308,7 +361,12 @@ export const getServiceById = async (req, res) => {
     const service = await Service.findById(id)
       .populate({
         path: 'providerId',
-        select: 'name bio profileImage location rating totalReviews totalServices isVerified responseTime completedProjects categories skills languages socialLinks createdAt userId status'
+        select: 'name bio location rating totalReviews totalServices isVerified responseTime completedProjects categories skills languages socialLinks createdAt userId status',
+        populate: {
+          path: 'userId',
+          select: 'profileImage firstName lastName',
+          model: 'User'
+        }
       });
 
     if (!service) {
@@ -350,8 +408,8 @@ export const getServiceById = async (req, res) => {
     // Generate image URLs
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
     const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
-    const providerProfileImageUrl = service.providerId.profileImage 
-      ? `${baseUrl}/${service.providerId.profileImage}` 
+    const userProfileImageUrl = service.providerId.userId?.profileImage 
+      ? `${baseUrl}/${service.providerId.userId.profileImage}` 
       : null;
 
     // Format response
@@ -382,8 +440,8 @@ export const getServiceById = async (req, res) => {
         providerId: service.providerId._id, // Keep the Provider ID for reference
         name: service.providerId.name,
         bio: service.providerId.bio,
-        profileImage: service.providerId.profileImage,
-        profileImageUrl: providerProfileImageUrl,
+        profileImage: service.providerId.userId?.profileImage,
+        profileImageUrl: userProfileImageUrl,
         location: service.providerId.location.address,
         rating: {
           average: providerRatingAverage,

@@ -37,7 +37,7 @@ export const getAllProvidersForAdmin = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const providers = await Provider.find(filter)
-      .populate('userId', 'email firstName lastName isVerified createdAt')
+      .populate('userId', 'email firstName lastName isVerified createdAt lastActive profileImage')
       .sort(sortObj)
       .skip(skip)
       .limit(Number(limit))
@@ -50,7 +50,8 @@ export const getAllProvidersForAdmin = async (req, res) => {
       id: provider._id,
       name: provider.name,
       bio: provider.bio,
-      profileImage: provider.profileImage,
+      profileImage: provider.userId.profileImage,
+      profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null,
       location: provider.location.address,
       status: provider.status,
       categories: provider.categories,
@@ -91,7 +92,7 @@ export const getProviderDetailsForAdmin = async (req, res) => {
     const { id } = req.params;
 
     const provider = await Provider.findById(id)
-      .populate('userId', 'email firstName lastName isVerified createdAt lastActive');
+      .populate('userId', 'email firstName lastName isVerified createdAt lastActive profileImage');
 
     if (!provider) {
       return res.status(404).json({ message: "Provider not found" });
@@ -122,24 +123,25 @@ export const getProviderDetailsForAdmin = async (req, res) => {
         id: provider._id,
         name: provider.name,
         bio: provider.bio,
-        profileImage: provider.profileImage,
+        profileImage: provider.userId.profileImage,
+        profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null,
         location: provider.location,
-              status: provider.status,
-      rejectionReason: provider.rejectionReason,
-      adminFeedback: provider.adminFeedback,
-      statusUpdatedAt: provider.statusUpdatedAt,
-      categories: provider.categories,
-      skills: provider.skills,
-      languages: provider.languages,
-      socialLinks: provider.socialLinks,
-      rating: provider.rating,
-      totalReviews: provider.totalReviews,
-      totalServices: provider.totalServices,
-      isVerified: provider.isVerified,
-      responseTime: provider.responseTime,
-      completedProjects: provider.completedProjects,
-      createdAt: provider.createdAt,
-      updatedAt: provider.updatedAt,
+        status: provider.status,
+        rejectionReason: provider.rejectionReason,
+        adminFeedback: provider.adminFeedback,
+        statusUpdatedAt: provider.statusUpdatedAt,
+        categories: provider.categories,
+        skills: provider.skills,
+        languages: provider.languages,
+        socialLinks: provider.socialLinks,
+        rating: provider.rating,
+        totalReviews: provider.totalReviews,
+        totalServices: provider.totalServices,
+        isVerified: provider.isVerified,
+        responseTime: provider.responseTime,
+        completedProjects: provider.completedProjects,
+        createdAt: provider.createdAt,
+        updatedAt: provider.updatedAt,
         user: {
           id: provider.userId._id,
           email: provider.userId.email,
@@ -147,7 +149,9 @@ export const getProviderDetailsForAdmin = async (req, res) => {
           lastName: provider.userId.lastName,
           isVerified: provider.userId.isVerified,
           createdAt: provider.userId.createdAt,
-          lastActive: provider.userId.lastActive
+          lastActive: provider.userId.lastActive,
+          profileImage: provider.userId.profileImage,
+          profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null
         }
       },
       services,
@@ -191,7 +195,7 @@ export const updateProviderStatus = async (req, res) => {
     }
 
     // Populate user data for response
-    const updatedProvider = await provider.populate('userId', 'email firstName lastName isVerified');
+    const updatedProvider = await provider.populate('userId', 'email firstName lastName isVerified profileImage');
 
     res.status(200).json({
       message: `Provider ${status} successfully`,
@@ -236,7 +240,7 @@ export const getAdminDashboardStats = async (req, res) => {
 
     // Get recent activity
     const recentProviders = await Provider.find()
-      .populate('userId', 'email firstName lastName')
+      .populate('userId', 'email firstName lastName profileImage')
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();
@@ -267,6 +271,8 @@ export const getAdminDashboardStats = async (req, res) => {
         name: p.name,
         status: p.status,
         createdAt: p.createdAt,
+        profileImage: p.userId.profileImage,
+        profileImageUrl: p.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${p.userId.profileImage}` : null,
         user: {
           email: p.userId.email,
           firstName: p.userId.firstName,

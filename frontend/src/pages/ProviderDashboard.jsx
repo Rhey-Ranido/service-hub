@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import ServiceManagement from '../components/ServiceManagement';
 import ServiceCreationForm from '../components/ServiceCreationForm';
 import MessageCenter from '../components/MessageCenter';
@@ -187,7 +186,6 @@ const ProviderDashboard = () => {
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -504,7 +502,7 @@ const ProviderDashboard = () => {
                               <p className="text-sm text-gray-500 mt-1">{service.shortDescription}</p>
                               <div className="flex items-center gap-4 mt-2">
                                 <span className="text-sm text-gray-600">
-                                  ${service.price?.amount}/{service.price?.unit}
+                                  ₱{service.price?.amount}/{service.price?.unit}
                                 </span>
                                 <div className="flex items-center gap-1">
                                   <Star className="h-4 w-4 text-yellow-400" />
@@ -581,8 +579,6 @@ const ProviderDashboard = () => {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

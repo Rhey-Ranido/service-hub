@@ -450,14 +450,35 @@ const ServiceMap = ({ services, center, onServiceClick, userLocation, className 
                     <Popup>
                       <div className="p-2 min-w-[250px]">
                         <h3 className="font-semibold text-sm mb-1">{service.title}</h3>
-                        <p className="text-xs text-gray-600 mb-2">{service.provider.name}</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          {/* Provider Profile Image - Show actual image if available, otherwise show user icon */}
+                          {service.provider?.profileImageUrl ? (
+                            <img
+                              src={service.provider.profileImageUrl}
+                              alt={`${service.provider.name}'s profile`}
+                              className="w-6 h-6 rounded-full object-cover border border-gray-200"
+                              onError={(e) => {
+                                // If image fails to load, hide it and show the fallback icon
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          {/* Fallback user icon - only show when no profile image is available */}
+                          <div className={`w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center ${
+                            service.provider?.profileImageUrl ? 'hidden' : ''
+                          }`}>
+                            <User className="w-3 h-3 text-blue-600" />
+                          </div>
+                          <p className="text-xs text-gray-600">{service.provider.name}</p>
+                        </div>
                         
                         <div className="space-y-1 mb-3">
                           <div className="flex items-center gap-2 text-xs">
                             <Star className="h-3 w-3 text-yellow-400 fill-current" />
                             <span>{(service.rating?.average || service.provider?.rating || 0).toFixed(1)}</span>
                             <DollarSign className="h-3 w-3 text-green-600" />
-                            <span>${service.price?.amount || service.price || 0}</span>
+                            <span>₱{service.price?.amount || service.price || 0}</span>
                           </div>
                           
                           {service.distance && (
@@ -504,7 +525,28 @@ const ServiceMap = ({ services, center, onServiceClick, userLocation, className 
             <div className="space-y-3">
               <div>
                 <h3 className="font-semibold text-lg">{selectedService.title}</h3>
-                <p className="text-sm text-gray-600">{selectedService.provider.name}</p>
+                <div className="flex items-center gap-2">
+                  {/* Provider Profile Image - Show actual image if available, otherwise show user icon */}
+                  {selectedService.provider?.profileImageUrl ? (
+                    <img
+                      src={selectedService.provider.profileImageUrl}
+                      alt={`${selectedService.provider.name}'s profile`}
+                      className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                      onError={(e) => {
+                        // If image fails to load, hide it and show the fallback icon
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  {/* Fallback user icon - only show when no profile image is available */}
+                  <div className={`w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center ${
+                    selectedService.provider?.profileImageUrl ? 'hidden' : ''
+                  }`}>
+                    <User className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <p className="text-sm text-gray-600">{selectedService.provider.name}</p>
+                </div>
               </div>
               
               <div className="flex items-center gap-4 text-sm">
@@ -514,7 +556,7 @@ const ServiceMap = ({ services, center, onServiceClick, userLocation, className 
                 </div>
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-4 w-4 text-green-600" />
-                  <span>${selectedService.price?.amount || selectedService.price || 0}</span>
+                  <span>₱{selectedService.price?.amount || selectedService.price || 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4 text-gray-500" />

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -244,7 +243,6 @@ const AdminDashboard = () => {
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-        <Footer />
       </div>
     );
   }
@@ -643,8 +641,6 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
-
-      <Footer />
     </div>
   );
 };

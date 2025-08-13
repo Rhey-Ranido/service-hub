@@ -14,13 +14,12 @@ export const getUserProfile = async (req, res) => {
     let providerInfo = null;
     if (user.role === 'provider') {
       providerInfo = await Provider.findOne({ userId: user._id })
-        .select('name bio profileImage location rating totalReviews totalServices isVerified status categories skills languages responseTime completedProjects socialLinks');
+        .select('name bio location rating totalReviews totalServices isVerified status categories skills languages responseTime completedProjects socialLinks');
     }
 
-    // Generate image URLs
+    // Generate image URLs - use user's profile image for both user and provider
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
     const profileImageUrl = user.profileImage ? `${baseUrl}/${user.profileImage}` : null;
-    const providerProfileImageUrl = providerInfo?.profileImage ? `${baseUrl}/${providerInfo.profileImage}` : null;
 
     const response = {
       user: {
@@ -42,7 +41,8 @@ export const getUserProfile = async (req, res) => {
     if (providerInfo) {
       response.provider = {
         ...providerInfo.toObject(),
-        profileImageUrl: providerProfileImageUrl
+        profileImage: user.profileImage, // Use user's profile image
+        profileImageUrl: profileImageUrl  // Use user's profile image URL
       };
     }
 

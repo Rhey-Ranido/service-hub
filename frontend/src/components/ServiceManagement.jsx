@@ -305,7 +305,7 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
               {/* Pricing */}
               <div className="flex items-center justify-between">
                 <div className="text-xl font-bold text-primary">
-                  ${service.price?.amount}
+                  ₱{service.price?.amount}
                 </div>
                 <span className="text-sm text-gray-600">
                   per {service.price?.unit}

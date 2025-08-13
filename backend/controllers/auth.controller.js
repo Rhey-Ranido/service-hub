@@ -67,11 +67,25 @@ export const getMe = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Generate profile image URL if exists
+    const profileImageUrl = user.profileImage 
+      ? `${req.protocol}://${req.get('host')}/uploads/${user.profileImage}`
+      : null;
+
     res.status(200).json({
       _id: user._id,
+      id: user._id,
       email: user.email,
       role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profileImage: user.profileImage,
+      profileImageUrl,
+      phone: user.phone,
+      isVerified: user.isVerified,
+      lastActive: user.lastActive,
       createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     });
   } catch (err) {
     console.error("Error in getMe:", err);

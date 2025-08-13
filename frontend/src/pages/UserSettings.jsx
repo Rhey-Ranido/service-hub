@@ -6,6 +6,7 @@ import ProfileImageUpload from '../components/ProfileImageUpload';
 import ProviderRegistrationForm from '../components/ProviderRegistrationForm';
 import ServiceCreationForm from '../components/ServiceCreationForm';
 import DarkModeToggle from '../components/DarkModeToggle';
+import LocationInput from '../components/LocationInput';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,8 @@ import {
   AlertTriangle,
   Briefcase,
   Zap,
-  Palette
+  Palette,
+  MapPin
 } from 'lucide-react';
 
 const UserSettings = () => {
@@ -31,6 +33,7 @@ const UserSettings = () => {
   const { isDarkMode } = useDarkMode();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [providerData, setProviderData] = useState(null);
   
   // Form states
   const [profileForm, setProfileForm] = useState({
@@ -46,6 +49,10 @@ const UserSettings = () => {
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
+  });
+  const [locationForm, setLocationForm] = useState({
+    address: '',
+    coordinates: null
   });
 
   // UI states
@@ -104,6 +111,21 @@ const UserSettings = () => {
       };
       
       setUser(updatedUserData);
+      
+      // Set provider data if available
+      if (data.provider) {
+        setProviderData(data.provider);
+        setLocationForm({
+          address: data.provider.location?.address || '',
+          coordinates: data.provider.location?.coordinates || null
+        });
+      } else {
+        setProviderData(null);
+        setLocationForm({
+          address: '',
+          coordinates: null
+        });
+      }
       
       // Update localStorage with the complete user data including profile image
       localStorage.setItem('user', JSON.stringify(updatedUserData));
@@ -239,6 +261,52 @@ const UserSettings = () => {
     }));
     
     showMessage('Profile picture updated successfully', 'success');
+  };
+
+  // Handle location update
+  const handleLocationUpdate = async (e) => {
+    e.preventDefault();
+    setSubmitting(prev => ({ ...prev, location: true }));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/providers/me`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          location: {
+            address: locationForm.address,
+            coordinates: locationForm.coordinates,
+            type: 'Point'
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update location');
+      }
+
+      setProviderData(prev => ({
+        ...prev,
+        location: {
+          address: locationForm.address,
+          coordinates: locationForm.coordinates,
+          type: 'Point'
+        }
+      }));
+
+      showMessage('Location updated successfully', 'success');
+
+    } catch (error) {
+      console.error('Error updating location:', error);
+      showMessage(error.message, 'error');
+    } finally {
+      setSubmitting(prev => ({ ...prev, location: false }));
+    }
   };
 
   // Toggle password visibility
@@ -443,6 +511,53 @@ const UserSettings = () => {
                     </form>
                   </CardContent>
                 </Card>
+
+                {/* Provider Location Settings */}
+                {user?.role === 'provider' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5" />
+                        Service Location
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handleLocationUpdate} className="space-y-4">
+                        {providerData && (
+                          <div className="mb-4 p-3 bg-muted rounded-lg">
+                            <div className="text-sm text-muted-foreground">
+                              <p><strong>Current Location:</strong> {providerData.location?.address || 'Not set'}</p>
+                              {providerData.location?.coordinates && (
+                                <p><strong>Coordinates:</strong> {providerData.location.coordinates[1].toFixed(4)}, {providerData.location.coordinates[0].toFixed(4)}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <LocationInput
+                          value={locationForm.address}
+                          onChange={(locationData) => setLocationForm(locationData)}
+                          placeholder="Enter your service location (e.g., San Francisco, CA)"
+                          required={true}
+                          showCoordinates={true}
+                        />
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-muted-foreground">
+                            <p>This location will be used to help clients find your services.</p>
+                            <p>You can use the "Get Location" button to automatically detect your current location.</p>
+                          </div>
+                          <Button 
+                            type="submit" 
+                            disabled={submitting.location}
+                            className="flex items-center space-x-2"
+                          >
+                            <MapPin className="h-4 w-4" />
+                            <span>{submitting.location ? 'Updating...' : 'Update Location'}</span>
+                          </Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           )}

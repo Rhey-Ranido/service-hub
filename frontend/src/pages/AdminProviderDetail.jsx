@@ -414,7 +414,7 @@ const AdminProviderDetail = () => {
                             <h4 className="font-medium">{service.title}</h4>
                             <p className="text-sm text-muted-foreground">{service.category}</p>
                             <p className="text-sm text-muted-foreground">
-                              ${service.price.amount} per {service.price.unit}
+                              ₱{service.price.amount} per {service.price.unit}
                             </p>
                           </div>
                           <Badge variant={service.isActive ? 'default' : 'secondary'}>

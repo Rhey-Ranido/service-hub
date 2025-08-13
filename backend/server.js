@@ -44,19 +44,6 @@ app.use(requestLogger);
 // Static file serving for uploaded images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// routes
-app.use("/api/auth", authRoutes);
-app.use("/api/protected", protectedRoutes);
-app.use("/api/providers", providerRoutes);
-app.use("/api/services", serviceRoutes);
-app.use("/api/reviewProvider", providerReviewRoutes);
-app.use("/api/reviewService", serviceReviewRoutes);
-app.use("/api/chat", chatRoutes);
-app.use("/api/message", messageRoutes);
-app.use("/api/upload", uploadRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/admin", adminRoutes);
-
 // MongoDB + HTTP server + Socket.IO
 const server = http.createServer(app);
 
@@ -72,7 +59,26 @@ mongoose
     });
 
     // Initialize Socket.IO
-    initSocket(server);
+    const io = initSocket(server);
+    
+    // Attach socket.io to request object BEFORE routes
+    app.use((req, res, next) => {
+      req.io = io;
+      next();
+    });
+
+    // routes
+    app.use("/api/auth", authRoutes);
+    app.use("/api/protected", protectedRoutes);
+    app.use("/api/providers", providerRoutes);
+    app.use("/api/services", serviceRoutes);
+    app.use("/api/reviewProvider", providerReviewRoutes);
+    app.use("/api/reviewService", serviceReviewRoutes);
+    app.use("/api/chat", chatRoutes);
+    app.use("/api/message", messageRoutes);
+    app.use("/api/upload", uploadRoutes);
+    app.use("/api/users", userRoutes);
+    app.use("/api/admin", adminRoutes);
   })
   .catch((err) => {
     console.error("❌ MongoDB connection error:", err.message);

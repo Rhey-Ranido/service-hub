@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import Navbar from '../components/Navbar';
@@ -41,7 +41,30 @@ const Messages = () => {
   const [socket, setSocket] = useState(null);
   const [typing, setTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState(null);
+  const [typingUsers, setTypingUsers] = useState(new Set());
   const [unreadCounts, setUnreadCounts] = useState({});
+  const messagesEndRef = useRef(null);
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Auto-scroll when typing indicator appears/disappears
+  useEffect(() => {
+    scrollToBottom();
+  }, [typing]);
+
+  // Debug: Monitor messages state changes
+  useEffect(() => {
+    console.log('📊 Messages state updated. Count:', messages.length);
+    console.log('📊 Latest message:', messages[messages.length - 1]?.content);
+  }, [messages, forceUpdate]);
 
   const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -49,13 +72,6 @@ const Messages = () => {
   const urlParams = new URLSearchParams(location.search);
   const chatIdFromUrl = urlParams.get('chat');
   const providerIdFromUrl = urlParams.get('provider');
-
-  console.log('URL Parameters:', {
-    chatIdFromUrl,
-    providerIdFromUrl,
-    serviceId: urlParams.get('serviceId'),
-    serviceTitle: urlParams.get('serviceTitle')
-  });
 
   useEffect(() => {
     // Check if user is authenticated
@@ -76,29 +92,78 @@ const Messages = () => {
     
     socketInstance.emit('setup', user);
     socketInstance.on('connected', () => {
-      console.log('Socket connected');
     });
     
-    socketInstance.on('message_received', (newMessage) => {
-      if (selectedChat && newMessage.chat._id === selectedChat._id) {
-        setMessages(prev => [...prev, newMessage]);
-      } else {
-        // Increment unread count for other chats
-        setUnreadCounts(prev => ({
-          ...prev,
-          [newMessage.chat._id]: (prev[newMessage.chat._id] || 0) + 1
-        }));
+            socketInstance.on('message_received', (newMessage) => {
+          console.log('📨 Received message:', newMessage.content, 'for chat:', newMessage.chat._id);
+          console.log('Current selectedChat:', selectedChat?._id);
+          console.log('Message sender:', newMessage.sender._id, 'Current user:', currentUser?.id);
+          console.log('Is own message:', newMessage.sender._id === currentUser?.id);
+          
+          if (selectedChat && newMessage.chat._id === selectedChat._id) {
+            console.log('✅ Adding message to current chat');
+            
+            // Use a more explicit state update to ensure re-render
+            setMessages(prevMessages => {
+              console.log('Current messages count:', prevMessages.length);
+              
+              // Check if message already exists to prevent duplicates
+              const messageExists = prevMessages.some(msg => msg._id === newMessage._id);
+              if (messageExists) {
+                console.log('⚠️ Message already exists, skipping');
+                return prevMessages;
+              }
+              
+              console.log('➕ Adding new message to chat. New count will be:', prevMessages.length + 1);
+              const newMessages = [...prevMessages, newMessage];
+              console.log('🔄 New messages array:', newMessages.map(m => m.content));
+              
+              // Force a re-render to ensure UI updates
+              setTimeout(() => setForceUpdate(prev => prev + 1), 0);
+              
+              return newMessages;
+            });
+          } else {
+            console.log('📬 Message for different chat, updating unread count');
+            // Increment unread count for other chats
+            setUnreadCounts(prev => ({
+              ...prev,
+              [newMessage.chat._id]: (prev[newMessage.chat._id] || 0) + 1
+            }));
+          }
+          // Update chat list with new message
+          setChats(prev => prev.map(chat => 
+            chat._id === newMessage.chat._id 
+              ? { ...chat, latestMessage: newMessage, updatedAt: newMessage.createdAt }
+              : chat
+          ));
+        });
+    
+    socketInstance.on('typing', (userId) => {
+      if (userId !== currentUser?.id) {
+        setTypingUsers(prev => new Set([...prev, userId]));
+        setTyping(true);
       }
-      // Update chat list with new message
-      setChats(prev => prev.map(chat => 
-        chat._id === newMessage.chat._id 
-          ? { ...chat, latestMessage: newMessage, updatedAt: newMessage.createdAt }
-          : chat
-      ));
     });
-    
-    socketInstance.on('typing', () => setTyping(true));
-    socketInstance.on('stop_typing', () => setTyping(false));
+    socketInstance.on('stop_typing', (userId) => {
+      if (userId !== currentUser?.id) {
+        setTypingUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(userId);
+          return newSet;
+        });
+        // Only set typing to false if no other users are typing
+        setTypingUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(userId);
+          const hasOtherTyping = newSet.size > 0;
+          if (!hasOtherTyping) {
+            setTyping(false);
+          }
+          return newSet;
+        });
+      }
+    });
     
     fetchChats();
     
@@ -109,54 +174,43 @@ const Messages = () => {
 
   // Effect to handle URL parameters after chats are loaded
   useEffect(() => {
-    console.log('URL Parameter Effect - chats.length:', chats.length, 'selectedChat:', selectedChat);
-    if (chats.length > 0 && !selectedChat) {
-      // If we have a specific chat ID from URL, select it
+    if (chats.length > 0 && (chatIdFromUrl || providerIdFromUrl)) {
+      let targetChat = null;
+      
       if (chatIdFromUrl) {
-        console.log('Looking for chat with ID:', chatIdFromUrl);
-        
-        // Validate that chatIdFromUrl is a valid MongoDB ObjectId
-        if (typeof chatIdFromUrl === 'string' && chatIdFromUrl.length === 24) {
-          const chat = chats.find(c => c._id === chatIdFromUrl);
-          if (chat) {
-            console.log('Found chat:', chat);
-            setSelectedChat(chat);
-            return;
-          } else {
-            console.log('Chat not found in chats array');
-          }
-        } else {
-          console.error('Invalid chatIdFromUrl:', chatIdFromUrl);
-        }
+        targetChat = chats.find(chat => chat._id === chatIdFromUrl);
+      } else if (providerIdFromUrl) {
+        targetChat = chats.find(chat => 
+          chat.users.some(user => user._id === providerIdFromUrl)
+        );
       }
       
-      // If we have a provider ID from URL, find or create chat with that provider
-      if (providerIdFromUrl) {
-        console.log('Looking for chat with provider ID:', providerIdFromUrl);
-        
-        // Validate that providerIdFromUrl is a valid MongoDB ObjectId
-        if (typeof providerIdFromUrl === 'string' && providerIdFromUrl.length === 24) {
-          const chat = chats.find(c => 
-            c.users.some(user => user._id === providerIdFromUrl)
-          );
-          if (chat) {
-            console.log('Found chat with provider:', chat);
-            setSelectedChat(chat);
-            return;
-          } else {
-            console.log('Chat with provider not found');
-          }
-        } else {
-          console.error('Invalid providerIdFromUrl:', providerIdFromUrl);
-        }
+      if (targetChat) {
+        setSelectedChat(targetChat);
+        fetchMessages(targetChat._id);
       }
     }
-  }, [chats, chatIdFromUrl, providerIdFromUrl, selectedChat]);
+  }, [chats, chatIdFromUrl, providerIdFromUrl]);
+
+  // Effect to join chat room when selectedChat changes
+  useEffect(() => {
+    if (socket && selectedChat) {
+      console.log('🔗 Joining chat room:', selectedChat._id);
+      socket.emit('join_chat', selectedChat._id);
+    }
+    
+    // Cleanup function to leave previous chat room
+    return () => {
+      if (socket && selectedChat) {
+        console.log('🔗 Leaving chat room:', selectedChat._id);
+        socket.emit('leave_chat', selectedChat._id);
+      }
+    };
+  }, [socket, selectedChat]);
 
   useEffect(() => {
-    console.log('Selected Chat Effect - selectedChat:', selectedChat);
+    console.log('🔄 selectedChat changed to:', selectedChat?._id);
     if (selectedChat) {
-      console.log('Calling fetchMessages with chatId:', selectedChat._id);
       fetchMessages(selectedChat._id);
       // Clear unread count for selected chat
       setUnreadCounts(prev => ({
@@ -227,8 +281,6 @@ const Messages = () => {
 
   const fetchMessages = async (chatId) => {
     try {
-      console.log('Fetching messages for chatId:', chatId, 'Type:', typeof chatId);
-      
       // Validate that chatId is a valid MongoDB ObjectId
       if (!chatId || typeof chatId !== 'string' || chatId.length !== 24) {
         console.error('Invalid chatId:', chatId);
@@ -269,7 +321,20 @@ const Messages = () => {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat || sending) return;
+    console.log('🚀 Sending message. selectedChat:', selectedChat?._id, 'newMessage:', newMessage);
+    if (!newMessage.trim()) {
+      console.log('❌ No message content');
+      return;
+    }
+    if (!selectedChat) {
+      console.log('❌ No chat selected');
+      setError('Please select a conversation first');
+      return;
+    }
+    if (sending) {
+      console.log('❌ Already sending');
+      return;
+    }
 
     try {
       setSending(true);
@@ -288,8 +353,11 @@ const Messages = () => {
 
       if (response.ok) {
         const newMsg = await response.json();
-        setMessages(prev => [...prev, newMsg]);
+        console.log('📤 Message sent successfully:', newMsg.content);
         setNewMessage('');
+        
+        // Don't add message locally - let socket event handle it
+        // This prevents duplicate messages when socket event is received
         
         // Update chat list with latest message
         setChats(prev => prev.map(chat => 
@@ -298,10 +366,7 @@ const Messages = () => {
             : chat
         ));
         
-        // Emit socket event for real-time messaging
-        if (socket) {
-          socket.emit('new_message', newMsg);
-        }
+        // Socket emission is now handled by the backend controller
       } else {
         throw new Error('Failed to send message');
       }
@@ -318,8 +383,8 @@ const Messages = () => {
     
     if (!selectedChat) return;
     
-    if (!typing) {
-      setTyping(true);
+    if (!typingUsers.has(currentUser?.id)) {
+      setTypingUsers(prev => new Set([...prev, currentUser?.id]));
       socket?.emit('typing', selectedChat._id);
     }
     
@@ -334,9 +399,13 @@ const Messages = () => {
       const timeNow = new Date().getTime();
       const timeDiff = timeNow - lastTypingTime;
       
-      if (timeDiff >= timeLength && typing) {
+      if (timeDiff >= timeLength && typingUsers.has(currentUser?.id)) {
         socket?.emit('stop_typing', selectedChat._id);
-        setTyping(false);
+        setTypingUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(currentUser?.id);
+          return newSet;
+        });
       }
     }, timeLength);
     
@@ -440,17 +509,8 @@ const Messages = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Messages</h1>
-          <p className="text-gray-600">
-            Communicate with service providers and manage your conversations
-          </p>
-        </div>
-
-        {/* Main Content */}
-        <div className="relative">
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
           {!selectedChat ? (
             // Chat Boxes View
             <div className="space-y-6">
@@ -694,18 +754,19 @@ const Messages = () => {
             </div>
           ) : (
             // Chat Window View
-            <div className="h-[600px] border rounded-lg overflow-hidden bg-white shadow-sm">
+            <div className="h-[600px] sm:h-[600px] border rounded-lg overflow-hidden bg-white shadow-sm">
               <div className="flex flex-col lg:flex-row h-full">
-                {/* Chat List Sidebar */}
-                <div className="flex flex-col w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-200">
+                {/* Chat List Sidebar - Hidden on mobile when chat is selected */}
+                <div className={`flex flex-col w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-200 ${selectedChat ? 'hidden lg:flex' : 'flex'}`}>
                   {/* Header */}
-                  <div className="p-4 border-b border-gray-200">
+                  <div className="p-4 border-b border-gray-200 flex-shrink-0">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-lg font-semibold text-gray-900">Conversations</h3>
                       <Button 
                         size="sm" 
                         onClick={() => setSelectedChat(null)}
                         variant="ghost"
+                        className="lg:hidden"
                       >
                         <ArrowLeft className="h-4 w-4" />
                       </Button>
@@ -737,7 +798,10 @@ const Messages = () => {
                           return (
                             <div
                               key={chat._id}
-                              onClick={() => setSelectedChat(chat)}
+                              onClick={() => {
+                            console.log('🎯 Selecting chat:', chat._id);
+                            setSelectedChat(chat);
+                          }}
                               className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
                                 isSelected ? 'bg-blue-50 lg:border-r-2 border-primary' : ''
                               }`}
@@ -773,28 +837,34 @@ const Messages = () => {
                   </div>
                 </div>
 
-                {/* Chat Window */}
-                <div className="flex flex-col flex-1">
+                {/* Chat Messages - Full screen on mobile, normal on desktop */}
+                <div className={`flex flex-col flex-1 h-full relative ${selectedChat ? 'flex' : 'hidden lg:flex'}`}>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200 bg-white">
+                  <div className="p-4 border-b border-gray-200 bg-white flex-shrink-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                          <Briefcase className="h-4 w-4 text-primary-foreground" />
+                        <Button 
+                          size="sm" 
+                          onClick={() => setSelectedChat(null)}
+                          variant="ghost"
+                          className="lg:hidden"
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900">
-                            {(() => {
-                              const otherUser = getOtherUser(selectedChat);
-                              return otherUser?.firstName && otherUser?.lastName 
-                                ? `${otherUser.firstName} ${otherUser.lastName}`
-                                : otherUser?.email || 'Provider';
-                            })()}
-                          </h4>
-                          <p className="text-xs text-gray-500">Service Provider</p>
+                          <h3 className="font-semibold text-gray-900">
+                            {getOtherUser(selectedChat)?.firstName && getOtherUser(selectedChat)?.lastName 
+                              ? `${getOtherUser(selectedChat).firstName} ${getOtherUser(selectedChat).lastName}`
+                              : getOtherUser(selectedChat)?.email || 'Unknown User'
+                            }
+                          </h3>
+                          <p className="text-sm text-gray-500">Online</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-1 sm:space-x-2">
+                      <div className="flex items-center space-x-2">
                         <Button variant="ghost" size="sm" className="hidden sm:flex">
                           <Phone className="h-4 w-4" />
                         </Button>
@@ -808,8 +878,11 @@ const Messages = () => {
                     </div>
                   </div>
 
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 bg-gray-50">
+                  {/* Messages - Scrollable area with bottom padding for input */}
+                  <div 
+                    key={`messages-${messages.length}-${forceUpdate}`}
+                    className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 bg-gray-50 pb-20 sm:pb-4"
+                  >
                     {messages.map((message, index) => {
                       const isOwnMessage = message.sender._id === currentUser?.id;
                       const showDate = index === 0 || 
@@ -860,31 +933,41 @@ const Messages = () => {
                         </div>
                       </div>
                     )}
+                    
+                    {/* Auto-scroll anchor */}
+                    <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Message Input */}
-                  <div className="p-2 sm:p-4 border-t border-gray-200 bg-white">
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        placeholder="Type a message..."
-                        value={newMessage}
-                        onChange={handleTyping}
-                        onKeyPress={handleKeyPress}
-                        className="flex-1"
-                        disabled={sending}
-                      />
-                      <Button 
-                        onClick={sendMessage} 
-                        disabled={!newMessage.trim() || sending}
-                        size="sm"
-                      >
-                        {sending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
+                  {/* Message Input - Fixed at bottom on mobile, normal on desktop */}
+                  <div className="p-2 sm:p-4 border-t border-gray-200 bg-white sm:flex-shrink-0 fixed bottom-0 left-0 right-0 sm:relative sm:bottom-auto sm:left-auto sm:right-auto">
+                    {selectedChat ? (
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          placeholder="Type a message..."
+                          value={newMessage}
+                          onChange={handleTyping}
+                          onKeyPress={handleKeyPress}
+                          className="flex-1"
+                          disabled={sending}
+                        />
+                        <Button 
+                          onClick={sendMessage} 
+                          disabled={!newMessage.trim() || sending}
+                          size="sm"
+                        >
+                          {sending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-4 text-gray-500">
+                        <MessageSquare className="h-5 w-5 mr-2" />
+                        <span className="text-sm">Select a conversation to start messaging</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -892,8 +975,6 @@ const Messages = () => {
           )}
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

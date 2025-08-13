@@ -97,7 +97,7 @@ const ProviderProfile = () => {
   };
 
   const formatPrice = (price, unit) => {
-    return `$${price}${unit === 'hour' ? '/hr' : unit === 'project' ? '/project' : `/${unit}`}`;
+    return `₱${price}${unit === 'hour' ? '/hr' : unit === 'project' ? '/project' : `/${unit}`}`;
   };
 
   const formatDate = (date) => {
@@ -294,9 +294,9 @@ const ProviderProfile = () => {
                   {/* Profile Image */}
                   <div className="flex-shrink-0">
                     <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center">
-                      {provider.profileImage ? (
+                      {provider.profileImageUrl ? (
                         <img 
-                          src={provider.profileImage} 
+                          src={provider.profileImageUrl} 
                           alt={provider.name}
                           className="w-24 h-24 rounded-full object-cover"
                         />

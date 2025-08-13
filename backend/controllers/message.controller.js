@@ -88,7 +88,16 @@ export const sendMessage = async (req, res) => {
 
     // Emit socket event for real-time messaging
     if (req.io) {
-      req.io.to(chatId).emit("new_message", message);
+      console.log(`📤 Broadcasting message to chat ${chatId}:`, message.content);
+      console.log(`📤 Message sender: ${message.sender._id}, Message ID: ${message._id}`);
+      
+      // Get the room and emit to all users in the chat
+      const room = req.io.sockets.adapter.rooms.get(chatId);
+      console.log(`📤 Users in room ${chatId}:`, room ? room.size : 0);
+      
+      req.io.to(chatId).emit("message_received", message);
+    } else {
+      console.log("❌ req.io is not available for broadcasting");
     }
 
     res.status(201).json(message);

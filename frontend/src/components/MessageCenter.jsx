@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,7 @@ const MessageCenter = () => {
   const [socket, setSocket] = useState(null);
   const [typing, setTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState(null);
+  const [typingUsers, setTypingUsers] = useState(new Set());
   const [replyToMessage, setReplyToMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [unreadCounts, setUnreadCounts] = useState({});
@@ -55,6 +56,21 @@ const MessageCenter = () => {
   const [providers, setProviders] = useState([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [providerSearchTerm, setProviderSearchTerm] = useState('');
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Auto-scroll when typing indicator appears/disappears
+  useEffect(() => {
+    scrollToBottom();
+  }, [typing]);
 
   const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -103,9 +119,72 @@ const MessageCenter = () => {
         });
         
         socketInstance.on('connected', () => {
-          console.log('Socket setup completed');
           if (selectedChat) {
             socketInstance.emit('join_chat', selectedChat._id);
+          }
+        });
+        
+        // Set up socket event handlers with proper user context
+        socketInstance.on('message_received', (newMessage) => {
+          console.log('📨 Received message:', newMessage.content, 'for chat:', newMessage.chat._id);
+          console.log('Current selectedChat:', selectedChat?._id);
+          console.log('Message sender:', newMessage.sender._id, 'Current user:', user.id);
+          console.log('Available chats:', chats.map(c => ({ id: c._id, name: c.latestMessage?.content || 'No message' })));
+          
+          if (selectedChat && newMessage.chat._id === selectedChat._id) {
+            console.log('✅ Adding message to current chat');
+            setMessages(prev => {
+              // Check if message already exists to prevent duplicates
+              const messageExists = prev.some(msg => msg._id === newMessage._id);
+              if (messageExists) {
+                console.log('⚠️ Message already exists, skipping');
+                return prev;
+              }
+              console.log('➕ Adding new message to chat');
+              return [...prev, newMessage];
+            });
+          } else {
+            // Check if this message is for a chat that the user has access to
+            const targetChat = chats.find(chat => chat._id === newMessage.chat._id);
+            if (targetChat) {
+              console.log('🎯 Auto-selecting chat for incoming message');
+              setSelectedChat(targetChat);
+              // Add message to the newly selected chat
+              setMessages([newMessage]);
+            } else {
+              console.log('📬 Message for different chat, updating unread count');
+              // Increment unread count for other chats
+              setUnreadCounts(prev => ({
+                ...prev,
+                [newMessage.chat._id]: (prev[newMessage.chat._id] || 0) + 1
+              }));
+            }
+          }
+          // Update chat list with new message
+          setChats(prev => prev.map(chat => 
+            chat._id === newMessage.chat._id 
+              ? { ...chat, latestMessage: newMessage, updatedAt: newMessage.createdAt }
+              : chat
+          ));
+        });
+        
+        socketInstance.on('typing', (userId) => {
+          if (userId !== user.id) {
+            setTypingUsers(prev => new Set([...prev, userId]));
+            setTyping(true);
+          }
+        });
+        socketInstance.on('stop_typing', (userId) => {
+          if (userId !== user.id) {
+            setTypingUsers(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(userId);
+              const hasOtherTyping = newSet.size > 0;
+              if (!hasOtherTyping) {
+                setTyping(false);
+              }
+              return newSet;
+            });
           }
         });
         
@@ -140,6 +219,20 @@ const MessageCenter = () => {
       }));
     }
   }, [selectedChat]);
+
+  // Effect to join chat room when selectedChat changes
+  useEffect(() => {
+    if (socket && selectedChat) {
+      socket.emit('join_chat', selectedChat._id);
+    }
+    
+    // Cleanup function to leave previous chat room
+    return () => {
+      if (socket && selectedChat) {
+        socket.emit('leave_chat', selectedChat._id);
+      }
+    };
+  }, [socket, selectedChat]);
 
   const fetchChats = async () => {
     try {
@@ -205,10 +298,24 @@ const MessageCenter = () => {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat || sending) return;
-    if (!socketConnected) {
-      setError('Chat connection lost. Please refresh the page.');
+    console.log('🚀 Sending message. selectedChat:', selectedChat?._id, 'newMessage:', newMessage);
+    if (!newMessage.trim()) {
+      console.log('❌ No message content');
       return;
+    }
+    if (!selectedChat) {
+      console.log('❌ No chat selected');
+      setError('Please select a conversation first');
+      return;
+    }
+    if (sending) {
+      console.log('❌ Already sending');
+      return;
+    }
+    
+    // Check socket connection but don't block sending if it's just a warning
+    if (!socketConnected) {
+      console.warn('Socket not connected, but attempting to send message');
     }
 
     try {
@@ -246,6 +353,7 @@ const MessageCenter = () => {
 
       if (response.ok) {
         const newMsg = await response.json();
+        console.log('📤 Message sent successfully:', newMsg.content);
         
         if (editingMessage) {
           // Update existing message in the list
@@ -254,8 +362,8 @@ const MessageCenter = () => {
           ));
           setEditingMessage(null);
         } else {
-          // Add new message
-          setMessages(prev => [...prev, newMsg]);
+          // Don't add message locally - let socket event handle it
+          // This prevents duplicate messages when socket event is received
           setReplyToMessage(null);
         }
         
@@ -268,10 +376,7 @@ const MessageCenter = () => {
             : chat
         ));
         
-        // Emit socket event for real-time messaging
-        if (socket && socketConnected) {
-          socket.emit('new_message', newMsg);
-        }
+        // Socket emission is now handled by the backend controller
       } else {
         throw new Error('Failed to send message');
       }
@@ -288,8 +393,8 @@ const MessageCenter = () => {
     
     if (!selectedChat) return;
     
-    if (!typing) {
-      setTyping(true);
+    if (!typingUsers.has(currentUser?.id)) {
+      setTypingUsers(prev => new Set([...prev, currentUser?.id]));
       socket?.emit('typing', selectedChat._id);
     }
     
@@ -304,9 +409,13 @@ const MessageCenter = () => {
       const timeNow = new Date().getTime();
       const timeDiff = timeNow - lastTypingTime;
       
-      if (timeDiff >= timeLength && typing) {
+      if (timeDiff >= timeLength && typingUsers.has(currentUser?.id)) {
         socket?.emit('stop_typing', selectedChat._id);
-        setTyping(false);
+        setTypingUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(currentUser?.id);
+          return newSet;
+        });
       }
     }, timeLength);
     
@@ -656,18 +765,19 @@ const MessageCenter = () => {
         </div>
       ) : (
         // Chat Window View
-        <div className="h-[600px] border rounded-lg overflow-hidden bg-white">
+        <div className="h-[600px] sm:h-[600px] border rounded-lg overflow-hidden bg-white">
           <div className="flex flex-col lg:flex-row h-full">
-            {/* Chat List Sidebar */}
-            <div className="flex flex-col w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-200">
+            {/* Chat List Sidebar - Hidden on mobile when chat is selected */}
+            <div className={`flex flex-col w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-200 ${selectedChat ? 'hidden lg:flex' : 'flex'}`}>
               {/* Header */}
-              <div className="p-4 border-b border-gray-200">
+              <div className="p-4 border-b border-gray-200 flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold text-gray-900">Conversations</h3>
                   <Button 
                     size="sm" 
                     onClick={() => setSelectedChat(null)}
                     variant="ghost"
+                    className="lg:hidden"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
@@ -735,28 +845,34 @@ const MessageCenter = () => {
               </div>
             </div>
 
-            {/* Chat Window */}
-            <div className="flex flex-col flex-1">
+            {/* Chat Messages - Full screen on mobile, normal on desktop */}
+            <div className={`flex flex-col flex-1 h-full relative ${selectedChat ? 'flex' : 'hidden lg:flex'}`}>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 bg-white">
+              <div className="p-4 border-b border-gray-200 bg-white flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-primary-foreground" />
+                    <Button 
+                      size="sm" 
+                      onClick={() => setSelectedChat(null)}
+                      variant="ghost"
+                      className="lg:hidden"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-primary-foreground" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">
-                        {(() => {
-                          const otherUser = getOtherUser(selectedChat);
-                          return otherUser?.firstName && otherUser?.lastName 
-                            ? `${otherUser.firstName} ${otherUser.lastName}`
-                            : otherUser?.email || 'Client';
-                        })()}
-                      </h4>
-                      <p className="text-xs text-gray-500">Client</p>
+                      <h3 className="font-semibold text-gray-900">
+                        {getOtherUser(selectedChat)?.firstName && getOtherUser(selectedChat)?.lastName 
+                          ? `${getOtherUser(selectedChat).firstName} ${getOtherUser(selectedChat).lastName}`
+                          : getOtherUser(selectedChat)?.email || 'Unknown User'
+                        }
+                      </h3>
+                      <p className="text-sm text-gray-500">Online</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1 sm:space-x-2">
+                  <div className="flex items-center space-x-2">
                     <Button variant="ghost" size="sm" className="hidden sm:flex">
                       <Phone className="h-4 w-4" />
                     </Button>
@@ -770,8 +886,8 @@ const MessageCenter = () => {
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 bg-gray-50">
+              {/* Messages - Scrollable area with bottom padding for input */}
+              <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 bg-gray-50 pb-20 sm:pb-4">
                 {messages.map((message, index) => {
                   const isOwnMessage = message.sender._id === currentUser?.id;
                   const showDate = index === 0 || 
@@ -807,46 +923,56 @@ const MessageCenter = () => {
                   );
                 })}
                 
-                {/* Typing Indicator */}
-                {typing && (
-                  <div className="flex justify-start">
-                    <div className="bg-white text-gray-900 px-4 py-2 rounded-lg border">
-                      <div className="flex items-center space-x-1">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                    {/* Typing Indicator */}
+                    {typing && (
+                      <div className="flex justify-start">
+                        <div className="bg-white text-gray-900 px-4 py-2 rounded-lg border">
+                          <div className="flex items-center space-x-1">
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            </div>
+                            <span className="text-xs text-gray-500 ml-2">typing...</span>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500 ml-2">typing...</span>
                       </div>
-                    </div>
+                    )}
+                    
+                    {/* Auto-scroll anchor */}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+              {/* Message Input - Fixed at bottom on mobile, normal on desktop */}
+              <div className="p-2 sm:p-4 border-t border-gray-200 bg-white sm:flex-shrink-0 fixed bottom-0 left-0 right-0 sm:relative sm:bottom-auto sm:left-auto sm:right-auto">
+                {selectedChat ? (
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Type a message..."
+                      value={newMessage}
+                      onChange={handleTyping}
+                      onKeyPress={handleKeyPress}
+                      className="flex-1"
+                      disabled={sending}
+                    />
+                    <Button 
+                      onClick={sendMessage} 
+                      disabled={!newMessage.trim() || sending}
+                      size="sm"
+                    >
+                      {sending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center py-4 text-gray-500">
+                    <MessageSquare className="h-5 w-5 mr-2" />
+                    <span className="text-sm">Select a conversation to start messaging</span>
                   </div>
                 )}
-              </div>
-
-              {/* Message Input */}
-              <div className="p-2 sm:p-4 border-t border-gray-200 bg-white">
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={handleTyping}
-                    onKeyPress={handleKeyPress}
-                    className="flex-1"
-                    disabled={sending}
-                  />
-                  <Button 
-                    onClick={sendMessage} 
-                    disabled={!newMessage.trim() || sending}
-                    size="sm"
-                  >
-                    {sending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
               </div>
             </div>
           </div>

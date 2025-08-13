@@ -89,7 +89,7 @@ const ServiceDetails = () => {
   };
 
   const formatPrice = (price, unit) => {
-    return `$${price}${unit === 'hour' ? '/hr' : unit === 'project' ? '/project' : `/${unit}`}`;
+    return `₱${price}${unit === 'hour' ? '/hr' : unit === 'project' ? '/project' : `/${unit}`}`;
   };
 
   const formatDate = (date) => {
@@ -578,7 +578,7 @@ const ServiceDetails = () => {
                               <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg">{pkg.name}</CardTitle>
                                 <div className="text-2xl font-bold text-primary">
-                                  ${pkg.price}
+                                  ₱{pkg.price}
                                 </div>
                               </div>
                             </CardHeader>

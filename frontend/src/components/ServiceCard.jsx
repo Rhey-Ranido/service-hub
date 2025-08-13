@@ -12,6 +12,19 @@ const ServiceCard = ({ service, onClick }) => {
     return null;
   }
 
+  // Log the service data for debugging
+  console.log('🎴 ServiceCard rendering:', {
+    serviceId: service.id,
+    title: service.title,
+    provider: {
+      name: service.provider?.name,
+      id: service.provider?.id,
+      profileImage: service.provider?.profileImage,
+      profileImageUrl: service.provider?.profileImageUrl,
+      hasProfileImage: !!service.provider?.profileImageUrl
+    }
+  });
+
   const handleCardClick = () => {
     if (onClick) {
       onClick(service);
@@ -21,7 +34,7 @@ const ServiceCard = ({ service, onClick }) => {
   // Format price display
   const formatPrice = (price, unit) => {
     if (!price) return 'Price on request';
-    return `$${price}${unit ? `/${unit}` : ''}`;
+    return `₱${price}${unit ? `/${unit}` : ''}`;
   };
 
   // Handle image navigation
@@ -43,12 +56,32 @@ const ServiceCard = ({ service, onClick }) => {
   // Get current image URL or placeholder
   const getCurrentImage = () => {
     if (service.imageUrls && service.imageUrls.length > 0) {
+      console.log(`🖼️ Service has ${service.imageUrls.length} images, using service image`);
       return service.imageUrls[currentImageIndex];
     }
-    return null;
+    
+    // Try multiple possible paths for provider profile image
+    let providerImageUrl = service.provider?.profileImageUrl;
+    
+    // If profileImageUrl is null but profileImage filename exists, try to construct the URL
+    if (!providerImageUrl && service.provider?.profileImage) {
+      providerImageUrl = `http://localhost:3000/uploads/${service.provider.profileImage}`;
+      console.log(`🔧 Constructed provider profile image URL:`, providerImageUrl);
+    }
+    
+    // Return provider profile image as fallback
+    if (providerImageUrl) {
+      console.log(`🖼️ Using provider profile image as fallback:`, providerImageUrl);
+    } else {
+      console.log(`❌ No service images or provider profile image available`);
+    }
+    
+    return providerImageUrl || null;
   };
 
   const currentImage = getCurrentImage();
+  const hasServiceImages = service.imageUrls && service.imageUrls.length > 0;
+  const isShowingProviderImage = !hasServiceImages && service.provider?.profileImageUrl;
 
   return (
     <Card 
@@ -61,8 +94,12 @@ const ServiceCard = ({ service, onClick }) => {
           {currentImage ? (
             <img
               src={currentImage}
-              alt={service.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              alt={isShowingProviderImage ? `${service.provider?.name || 'Provider'}'s profile` : service.title}
+              className={`transition-transform duration-300 ${
+                isShowingProviderImage 
+                  ? 'object-cover rounded-full w-32 h-32 mx-auto' 
+                  : 'w-full h-full object-cover group-hover:scale-105'
+              }`}
             />
           ) : (
             <div className="text-primary/30">
@@ -70,8 +107,8 @@ const ServiceCard = ({ service, onClick }) => {
             </div>
           )}
           
-          {/* Image Navigation for multiple images */}
-          {service.imageUrls && service.imageUrls.length > 1 && (
+          {/* Image Navigation for multiple images - only show for service images */}
+          {hasServiceImages && service.imageUrls.length > 1 && (
             <>
               <Button
                 size="sm"
@@ -102,6 +139,18 @@ const ServiceCard = ({ service, onClick }) => {
                     }`}
                   />
                 ))}
+              </div>
+            </>
+          )}
+          
+          {/* Provider image indicator */}
+          {isShowingProviderImage && (
+            <>
+              {console.log(`🏷️ Showing provider image indicator for ${service.provider?.name}`)}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
+                <Badge variant="secondary" className="bg-background/90 text-foreground text-xs">
+                  Provider Photo
+                </Badge>
               </div>
             </>
           )}
@@ -159,37 +208,112 @@ const ServiceCard = ({ service, onClick }) => {
           </div>
         )}
 
-        {/* Provider Info */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {service.provider?.name || 'Unknown Provider'}
-              </p>
-              <div className="flex items-center space-x-1">
-                <MapPin className="w-3 h-3 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">
-                  {service.provider?.location || 'Location not specified'}
-                </p>
+        {/* Enhanced Provider Profile Section */}
+        <div className="mb-4">
+          {/* Provider Header with Profile */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              {/* Enhanced Provider Profile Image */}
+              {service.provider?.profileImageUrl ? (
+                <>
+                  {console.log(`🖼️ Displaying profile image for ${service.provider.name}:`, service.provider.profileImageUrl)}
+                  <div className="relative">
+                    <img
+                      src={service.provider.profileImageUrl}
+                      alt={`${service.provider.name || 'Provider'}'s profile`}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 shadow-sm"
+                      onError={(e) => {
+                        // If image fails to load, hide it and show the fallback icon
+                        console.log(`❌ Profile image failed to load for ${service.provider.name}:`, service.provider.profileImageUrl);
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    {/* Verified badge overlay */}
+                    {service.provider?.isVerified && (
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-background">
+                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {console.log(`👤 No profile image available for ${service.provider?.name || 'Unknown Provider'}, showing fallback icon`)}
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center border-2 border-primary/20">
+                      <User className="w-6 h-6 text-primary" />
+                    </div>
+                    {/* Verified badge overlay */}
+                    {service.provider?.isVerified && (
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-background">
+                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+              
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {service.provider?.name || 'Unknown Provider'}
+                  </p>
+                  {service.provider?.isVerified && (
+                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
+                      Verified
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center space-x-1 mt-1">
+                  <MapPin className="w-3 h-3 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">
+                    {service.provider?.location || 'Location not specified'}
+                  </p>
+                </div>
               </div>
             </div>
+            
+            {/* Rating */}
+            {(service.provider?.rating > 0 || service.rating?.average > 0) && (
+              <div className="flex items-center space-x-1">
+                <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                <span className="text-sm font-medium text-foreground">
+                  {(service.provider?.rating || service.rating?.average || 0).toFixed(1)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  ({service.provider?.reviewCount || service.rating?.count || 0})
+                </span>
+              </div>
+            )}
           </div>
           
-          {/* Rating */}
-          {(service.provider?.rating > 0 || service.rating?.average > 0) && (
-            <div className="flex items-center space-x-1">
-              <Star className="w-4 h-4 text-yellow-400 fill-current" />
-              <span className="text-sm font-medium text-foreground">
-                {(service.provider?.rating || service.rating?.average || 0).toFixed(1)}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                ({service.provider?.reviewCount || service.rating?.count || 0})
-              </span>
+          {/* Provider Stats */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+            <div className="flex items-center space-x-4">
+              {service.provider?.totalServices && (
+                <div className="flex items-center space-x-1">
+                  <Users className="w-3 h-3" />
+                  <span>{service.provider.totalServices} services</span>
+                </div>
+              )}
+              {service.totalOrders > 0 && (
+                <div className="flex items-center space-x-1">
+                  <Clock className="w-3 h-3" />
+                  <span>{service.totalOrders} orders</span>
+                </div>
+              )}
             </div>
-          )}
+            {service.provider?.responseTime && (
+              <span className="text-primary font-medium">
+                Responds in {service.provider.responseTime}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Additional info */}

@@ -29,7 +29,19 @@
     last_name: "Opriassa",
     Hobby: "Piggery",
   },
-  
-  
-  
+  {
+    first_name: "Beatriz Jane",
+    last_name: "Dadula",
+    Hobby: "Printing Business",
+  },
+  {
+    first_name: "Fritz Kirby",
+    last_name: "Delacruz",
+    Hobby: "Pets",
+  },
+  {
+    first_name: "Alvin",
+    last_name: "Alvarez",
+    Hobby: "Sports",
+  },
 ];

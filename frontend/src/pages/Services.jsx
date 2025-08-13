@@ -14,7 +14,8 @@ import {
   DollarSign,
   Clock,
   Users,
-  X
+  X,
+  Search
 } from 'lucide-react';
 
 const Services = () => {
@@ -91,7 +92,9 @@ const Services = () => {
           name: service.provider?.name || 'Unknown Provider',
           rating: service.provider?.rating || 0,
           reviewCount: service.provider?.reviewCount || 0,
-          location: service.provider?.location || 'Location not specified'
+          location: service.provider?.location || 'Location not specified',
+          profileImage: service.provider?.profileImage,
+          profileImageUrl: service.provider?.profileImageUrl
         },
         rating: {
           average: service.rating?.average || 0,
@@ -101,6 +104,21 @@ const Services = () => {
         views: service.views || 0,
         isActive: service.isActive !== false // Default to true if not specified
       })) || [];
+
+      // Log the transformed services to see the data structure
+      console.log('🔍 Raw services data from backend:', data.services);
+      console.log('🔄 Transformed services:', transformedServices);
+      console.log('👤 Provider profile image details:');
+      transformedServices.forEach((service, index) => {
+        console.log(`Service ${index + 1}: "${service.title}"`);
+        console.log(`  - Provider: ${service.provider?.name}`);
+        console.log(`  - Provider ID: ${service.provider?.id}`);
+        console.log(`  - Profile Image: ${service.provider?.profileImage}`);
+        console.log(`  - Profile Image URL: ${service.provider?.profileImageUrl}`);
+        console.log(`  - Has Profile Image: ${!!service.provider?.profileImageUrl}`);
+        console.log(`  - Raw Provider Data:`, data.services[index]?.provider);
+        console.log('  ---');
+      });
 
       setServices(transformedServices);
       setFilteredServices(transformedServices);

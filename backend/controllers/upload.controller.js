@@ -64,31 +64,43 @@ export const uploadProviderProfileImage = async (req, res) => {
     const userId = req.user.id;
     const fileName = `profiles/${req.file.filename}`;
 
-    // Find provider by userId
+    // Find provider by userId to verify provider exists
     const provider = await Provider.findOne({ userId });
     if (!provider) {
       deleteFile(req.file.path);
       return res.status(404).json({ message: 'Provider profile not found' });
     }
 
-    const oldImage = provider.profileImage;
+    // Get old profile image from User model to delete it
+    const user = await User.findById(userId);
+    const oldImage = user?.profileImage;
 
-    // Update provider with new profile image
-    const updatedProvider = await Provider.findByIdAndUpdate(
-      provider._id,
+    // Update USER with new profile image (not provider)
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
       { profileImage: fileName },
-      { new: true }
-    ).populate('userId', 'email firstName lastName');
+      { new: true, select: '-password' }
+    );
+
+    if (!updatedUser) {
+      deleteFile(req.file.path);
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     // Delete old image if it exists
     if (oldImage) {
       deleteFile(path.join('uploads', oldImage));
     }
 
+    // Get updated provider data with populated user info
+    const updatedProvider = await Provider.findById(provider._id)
+      .populate('userId', 'email firstName lastName profileImage');
+
     res.status(200).json({
       message: 'Provider profile image uploaded successfully',
       provider: {
         ...updatedProvider.toObject(),
+        profileImage: updatedUser.profileImage,
         profileImageUrl: getFileUrl(req, fileName)
       }
     });
