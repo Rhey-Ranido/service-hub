@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ServiceReviews from '../components/ServiceReviews';
+import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -57,7 +58,7 @@ const ServiceDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   useEffect(() => {
     fetchServiceDetails();
@@ -143,10 +144,13 @@ const ServiceDetails = () => {
         return;
       }
 
+      // Extract the correct user ID from provider data
+      const providerUserId = service.provider.id?._id || service.provider.id;
+      
       console.log('Contacting provider with service data:', {
         serviceId: service.id,
         providerId: service.provider.id,
-        providerUserId: service.provider.id, // This should now be the User ID
+        providerUserId: providerUserId,
         serviceTitle: service.title
       });
 
@@ -165,31 +169,24 @@ const ServiceDetails = () => {
       }
 
       // Validate the provider user ID (for chat creation)
-      if (!service.provider.id || typeof service.provider.id !== 'string' || service.provider.id.length !== 24) {
-        console.error('Invalid provider user ID:', service.provider.id);
+      if (!providerUserId || typeof providerUserId !== 'string' || providerUserId.length !== 24) {
+        console.error('Invalid provider user ID:', providerUserId);
         console.error('Provider data:', service.provider);
         setError('Invalid provider user ID. Please try refreshing the page.');
-        return;
-      }
-
-      // Additional check to ensure we have a valid user ID
-      if (!service.provider.id || service.provider.id === service.provider.providerId) {
-        console.error('Provider user ID is missing or same as provider ID');
-        setError('Provider user ID is missing. Please try refreshing the page.');
         return;
       }
 
       console.log('Provider data structure:', {
         id: service.provider.id,
         providerId: service.provider.providerId,
+        extractedUserId: providerUserId,
         name: service.provider.name
       });
 
-      // Prepare request body
+      // Prepare request body - no initial message, let user write first
       const requestBody = { 
-        userId: service.provider.id,
-        serviceId: service.id,
-        initialMessage: `Hi! I'm interested in your "${service.title}" service. Can you tell me more about it?`
+        userId: providerUserId,
+        serviceId: service.id
       };
 
       console.log('Request body:', requestBody);

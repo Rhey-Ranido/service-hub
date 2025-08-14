@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ServiceImageManager from './ServiceImageManager';
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 import { 
   X,
   Save,
@@ -44,7 +45,7 @@ const ServiceEditModal = ({ service, onClose, onUpdate }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   const categories = [
     'Technology', 'Marketing', 'Design', 'Writing', 'Business', 'Other'

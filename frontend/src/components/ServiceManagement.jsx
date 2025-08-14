@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus,
@@ -68,7 +69,7 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/services/${serviceId}`, {
+      const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -91,7 +92,7 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
   const toggleServiceStatus = async (serviceId, currentStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/services/${serviceId}`, {
+      const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

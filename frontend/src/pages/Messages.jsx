@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 import { 
   MessageSquare, 
   Search, 
@@ -66,7 +67,7 @@ const Messages = () => {
     console.log('📊 Latest message:', messages[messages.length - 1]?.content);
   }, [messages, forceUpdate]);
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   // Parse URL parameters
   const urlParams = new URLSearchParams(location.search);
@@ -87,7 +88,7 @@ const Messages = () => {
     setCurrentUser(user);
     
     // Initialize socket connection
-    const socketInstance = io('http://localhost:3000');
+    const socketInstance = io(SOCKET_URL);
     setSocket(socketInstance);
     
     socketInstance.emit('setup', user);

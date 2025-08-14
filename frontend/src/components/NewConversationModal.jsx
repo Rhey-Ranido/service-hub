@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 import { 
   Search, 
   User, 
@@ -20,7 +21,7 @@ const NewConversationModal = ({ isOpen, onClose, onConversationCreated }) => {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   useEffect(() => {
     if (isOpen) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,7 @@ const AdminProviderDetail = () => {
   const [adminFeedback, setAdminFeedback] = useState('');
   const [actionType, setActionType] = useState('');
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   useEffect(() => {
     // Check if user is admin

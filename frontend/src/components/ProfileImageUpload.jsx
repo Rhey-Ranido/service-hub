@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, User, Loader2, Camera, Trash2 } from 'lucide-react';
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 
 const ProfileImageUpload = ({ 
   type = 'user', // 'user' or 'provider'
@@ -20,7 +21,7 @@ const ProfileImageUpload = ({
     return localStorage.getItem('token');
   };
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   useEffect(() => {
     setPreviewUrl(currentImageUrl);

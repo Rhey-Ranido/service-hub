@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ServiceCard from '../components/ServiceCard';
 import ServiceSearch from '../components/ServiceSearch';
+import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -31,8 +32,7 @@ const Services = () => {
   const [locationPermission, setLocationPermission] = useState('unknown');
   const servicesPerPage = 12;
 
-  // API Configuration
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   // ServiceSearch handlers
   const handleSearchResults = (results) => {

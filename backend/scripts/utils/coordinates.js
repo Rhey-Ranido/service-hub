@@ -23,3 +23,5 @@ export const generateNearbyCoordinates = (baseLat, baseLng, minDistanceKm = 1, m
   const lngOffset = (distance * Math.sin(angle)) / (111 * Math.cos(baseLat * Math.PI / 180));
   return [baseLng + lngOffset, baseLat + latOffset];
 };
+
+

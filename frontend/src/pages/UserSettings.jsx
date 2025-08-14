@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ProfileImageUpload from '../components/ProfileImageUpload';
+import { API_BASE_URL } from '../config/api';
 import ProviderRegistrationForm from '../components/ProviderRegistrationForm';
 import ServiceCreationForm from '../components/ServiceCreationForm';
 import DarkModeToggle from '../components/DarkModeToggle';
@@ -72,7 +73,7 @@ const UserSettings = () => {
     showFlow: false
   });
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   // Get auth token
   const getAuthToken = () => {

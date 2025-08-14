@@ -19,7 +19,7 @@ const ProviderReviews = ({ providerId, onReviewUpdate }) => {
     comment: ''
   });
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
 

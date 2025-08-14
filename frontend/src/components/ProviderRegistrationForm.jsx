@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 import { 
   User, 
   MapPin, 
@@ -43,7 +44,7 @@ const ProviderRegistrationForm = ({ onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

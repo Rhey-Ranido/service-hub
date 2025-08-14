@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import ServiceManagement from '../components/ServiceManagement';
 import ServiceCreationForm from '../components/ServiceCreationForm';
 import MessageCenter from '../components/MessageCenter';
+import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,7 +54,7 @@ const ProviderDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showCreateServiceForm, setShowCreateServiceForm] = useState(false);
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   // Check if user is a provider and redirect if not
   useEffect(() => {

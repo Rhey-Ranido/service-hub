@@ -46,7 +46,7 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   const categories = [
     'Technology', 'Marketing', 'Design', 'Writing', 'Business', 'Other'

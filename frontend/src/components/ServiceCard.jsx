@@ -53,57 +53,38 @@ const ServiceCard = ({ service, onClick }) => {
     }
   };
 
-  // Get current image URL or placeholder
+  // Get current image URL - only return service images, not provider images
   const getCurrentImage = () => {
     if (service.imageUrls && service.imageUrls.length > 0) {
       console.log(`🖼️ Service has ${service.imageUrls.length} images, using service image`);
       return service.imageUrls[currentImageIndex];
     }
     
-    // Try multiple possible paths for provider profile image
-    let providerImageUrl = service.provider?.profileImageUrl;
-    
-    // If profileImageUrl is null but profileImage filename exists, try to construct the URL
-    if (!providerImageUrl && service.provider?.profileImage) {
-      providerImageUrl = `http://localhost:3000/uploads/${service.provider.profileImage}`;
-      console.log(`🔧 Constructed provider profile image URL:`, providerImageUrl);
-    }
-    
-    // Return provider profile image as fallback
-    if (providerImageUrl) {
-      console.log(`🖼️ Using provider profile image as fallback:`, providerImageUrl);
-    } else {
-      console.log(`❌ No service images or provider profile image available`);
-    }
-    
-    return providerImageUrl || null;
+    // Return null if no service images - this will show the icon fallback
+    console.log(`📷 No service images available, will show icon fallback`);
+    return null;
   };
 
   const currentImage = getCurrentImage();
   const hasServiceImages = service.imageUrls && service.imageUrls.length > 0;
-  const isShowingProviderImage = !hasServiceImages && service.provider?.profileImageUrl;
 
   return (
     <Card 
-      className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-0 shadow-md overflow-hidden"
+      className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-0 shadow-md overflow-hidden w-full"
       onClick={handleCardClick}
     >
       <div className="relative">
         {/* Service Image */}
-        <div className="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden">
+        <div className="h-40 sm:h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden">
           {currentImage ? (
             <img
               src={currentImage}
-              alt={isShowingProviderImage ? `${service.provider?.name || 'Provider'}'s profile` : service.title}
-              className={`transition-transform duration-300 ${
-                isShowingProviderImage 
-                  ? 'object-cover rounded-full w-32 h-32 mx-auto' 
-                  : 'w-full h-full object-cover group-hover:scale-105'
-              }`}
+              alt={service.title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="text-primary/30">
-              <ImageIcon className="w-16 h-16" />
+              <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16" />
             </div>
           )}
           
@@ -113,18 +94,18 @@ const ServiceCard = ({ service, onClick }) => {
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white border-0"
+                className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white border-0 h-8 w-8 p-0"
                 onClick={(e) => handleImageNavigation('prev', e)}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white border-0"
+                className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white border-0 h-8 w-8 p-0"
                 onClick={(e) => handleImageNavigation('next', e)}
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               
               {/* Image indicators */}
@@ -132,7 +113,7 @@ const ServiceCard = ({ service, onClick }) => {
                 {service.imageUrls.map((_, index) => (
                   <div
                     key={index}
-                    className={`w-2 h-2 rounded-full transition-colors ${
+                    className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors ${
                       index === currentImageIndex 
                         ? 'bg-white' 
                         : 'bg-white/50'
@@ -143,65 +124,55 @@ const ServiceCard = ({ service, onClick }) => {
             </>
           )}
           
-          {/* Provider image indicator */}
-          {isShowingProviderImage && (
-            <>
-              {console.log(`🏷️ Showing provider image indicator for ${service.provider?.name}`)}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-                <Badge variant="secondary" className="bg-background/90 text-foreground text-xs">
-                  Provider Photo
-                </Badge>
-              </div>
-            </>
-          )}
+
         </div>
         
         {/* Featured badge */}
         {service.featured && (
-          <div className="absolute top-3 left-3">
-            <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-white">
-              <Star className="w-3 h-3 mr-1" />
+          <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+            <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs">
+              <Star className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
               Featured
             </Badge>
           </div>
         )}
         
         {/* Price badge */}
-        <div className="absolute top-3 right-3">
-          <Badge variant="secondary" className="bg-background/90 text-foreground font-semibold">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
+          <Badge variant="secondary" className="bg-background/90 text-foreground font-semibold text-xs sm:text-sm">
             {formatPrice(service.price, service.priceUnit)}
           </Badge>
         </div>
       </div>
 
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+            <CardTitle className="text-base sm:text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
               {service.title || 'Untitled Service'}
             </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground mt-1 line-clamp-2">
+            <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
               {service.shortDescription || service.description || 'No description available'}
             </CardDescription>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 px-3 sm:px-6 pb-3 sm:pb-6">
         {/* Tags */}
         {service.tags && service.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
+          <div className="flex flex-wrap gap-1 mb-3 sm:mb-4">
             {service.tags.slice(0, 3).map((tag, index) => (
               <Badge 
                 key={index} 
                 variant="outline" 
-                className="text-xs px-2 py-1 bg-muted text-muted-foreground border-border"
+                className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-muted text-muted-foreground border-border"
               >
                 {tag}
               </Badge>
             ))}
             {service.tags.length > 3 && (
-              <Badge variant="outline" className="text-xs px-2 py-1 bg-muted text-muted-foreground">
+              <Badge variant="outline" className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-muted text-muted-foreground">
                 +{service.tags.length - 3}
               </Badge>
             )}
@@ -209,19 +180,19 @@ const ServiceCard = ({ service, onClick }) => {
         )}
 
         {/* Enhanced Provider Profile Section */}
-        <div className="mb-4">
+        <div className="mb-3 sm:mb-4">
           {/* Provider Header with Profile */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
               {/* Enhanced Provider Profile Image */}
               {service.provider?.profileImageUrl ? (
                 <>
                   {console.log(`🖼️ Displaying profile image for ${service.provider.name}:`, service.provider.profileImageUrl)}
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <img
                       src={service.provider.profileImageUrl}
                       alt={`${service.provider.name || 'Provider'}'s profile`}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 shadow-sm"
+                      className="w-8 h-8 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-primary/20 shadow-sm"
                       onError={(e) => {
                         // If image fails to load, hide it and show the fallback icon
                         console.log(`❌ Profile image failed to load for ${service.provider.name}:`, service.provider.profileImageUrl);
@@ -231,8 +202,8 @@ const ServiceCard = ({ service, onClick }) => {
                     />
                     {/* Verified badge overlay */}
                     {service.provider?.isVerified && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-background">
-                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-background">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>
@@ -242,14 +213,14 @@ const ServiceCard = ({ service, onClick }) => {
               ) : (
                 <>
                   {console.log(`👤 No profile image available for ${service.provider?.name || 'Unknown Provider'}, showing fallback icon`)}
-                  <div className="relative">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center border-2 border-primary/20">
-                      <User className="w-6 h-6 text-primary" />
+                  <div className="relative flex-shrink-0">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center border-2 border-primary/20">
+                      <User className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
                     </div>
                     {/* Verified badge overlay */}
                     {service.provider?.isVerified && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-background">
-                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-background">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>
@@ -258,20 +229,20 @@ const ServiceCard = ({ service, onClick }) => {
                 </>
               )}
               
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <p className="text-sm font-semibold text-foreground">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  <p className="text-xs sm:text-sm font-semibold text-foreground truncate">
                     {service.provider?.name || 'Unknown Provider'}
                   </p>
                   {service.provider?.isVerified && (
-                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
+                    <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0.5 bg-green-100 text-green-700 border-green-200 flex-shrink-0">
                       Verified
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center space-x-1 mt-1">
-                  <MapPin className="w-3 h-3 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center space-x-1 mt-0.5 sm:mt-1">
+                  <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-muted-foreground flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground truncate">
                     {service.provider?.location || 'Location not specified'}
                   </p>
                 </div>
@@ -280,12 +251,12 @@ const ServiceCard = ({ service, onClick }) => {
             
             {/* Rating */}
             {(service.provider?.rating > 0 || service.rating?.average > 0) && (
-              <div className="flex items-center space-x-1">
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <span className="text-sm font-medium text-foreground">
+              <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
+                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-current" />
+                <span className="text-xs sm:text-sm font-medium text-foreground">
                   {(service.provider?.rating || service.rating?.average || 0).toFixed(1)}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground hidden sm:inline">
                   ({service.provider?.reviewCount || service.rating?.count || 0})
                 </span>
               </div>
@@ -293,23 +264,23 @@ const ServiceCard = ({ service, onClick }) => {
           </div>
           
           {/* Provider Stats */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/30 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               {service.provider?.totalServices && (
                 <div className="flex items-center space-x-1">
-                  <Users className="w-3 h-3" />
-                  <span>{service.provider.totalServices} services</span>
+                  <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                  <span className="truncate">{service.provider.totalServices} services</span>
                 </div>
               )}
               {service.totalOrders > 0 && (
                 <div className="flex items-center space-x-1">
-                  <Clock className="w-3 h-3" />
-                  <span>{service.totalOrders} orders</span>
+                  <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                  <span className="truncate">{service.totalOrders} orders</span>
                 </div>
               )}
             </div>
             {service.provider?.responseTime && (
-              <span className="text-primary font-medium">
+              <span className="text-primary font-medium text-xs flex-shrink-0 hidden sm:inline">
                 Responds in {service.provider.responseTime}
               </span>
             )}
@@ -317,28 +288,28 @@ const ServiceCard = ({ service, onClick }) => {
         </div>
 
         {/* Additional info */}
-        <div className="flex items-center justify-between mb-4 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between mb-3 sm:mb-4 text-xs text-muted-foreground">
           {service.deliveryTime && (
             <div className="flex items-center space-x-1">
-              <Clock className="w-3 h-3" />
+              <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span>Delivery: {service.deliveryTime}</span>
             </div>
           )}
           {service.totalOrders > 0 && (
-            <span>{service.totalOrders} orders completed</span>
+            <span className="hidden sm:inline">{service.totalOrders} orders completed</span>
           )}
         </div>
 
         {/* Action Button */}
         <Button 
-          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors text-sm sm:text-base h-9 sm:h-10"
           variant="outline"
           onClick={(e) => {
             e.stopPropagation(); // Prevent card click when button is clicked
             handleCardClick();
           }}
         >
-          <Clock className="w-4 h-4 mr-2" />
+          <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
           View Details
         </Button>
       </CardContent>

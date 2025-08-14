@@ -19,7 +19,7 @@ const ServiceImageManager = ({ service, onUpdate }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   const getAuthToken = () => {
     return localStorage.getItem('token');

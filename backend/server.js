@@ -30,7 +30,13 @@ const app = express();
 
 // CORS configuration - allow frontend to access backend
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+  origin: [
+    "http://localhost:5173", 
+    "http://localhost:3000", 
+    "http://127.0.0.1:5173",
+    "http://192.168.1.17:5173",  // Allow access from network IP
+    "http://192.168.1.17:3000"   // Allow access from network IP
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -52,9 +58,12 @@ mongoose
   .then(() => {
     console.log("✅ Connected to MongoDB");
 
-    // Start HTTP server
-    server.listen(process.env.PORT, () => {
+    // Start HTTP server - listen on all network interfaces
+    server.listen(process.env.PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${process.env.PORT}`);
+      console.log(`🌐 Server accessible at:`);
+      console.log(`   - Local: http://localhost:${process.env.PORT}`);
+      console.log(`   - Network: http://192.168.1.17:${process.env.PORT}`);
       console.log(`📁 Static files served from: ${path.join(process.cwd(), 'uploads')}`);
     });
 

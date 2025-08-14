@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ProviderReviews from '../components/ProviderReviews';
+import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,13 +63,7 @@ const ProviderProfile = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-  const API_BASE_URL = 'http://localhost:3000/api';
-
-  useEffect(() => {
-    fetchProviderProfile();
-  }, [id]);
-
-  const fetchProviderProfile = async () => {
+  const fetchProviderProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -94,7 +89,11 @@ const ProviderProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchProviderProfile();
+  }, [fetchProviderProfile]);
 
   const formatPrice = (price, unit) => {
     return `₱${price}${unit === 'hour' ? '/hr' : unit === 'project' ? '/project' : `/${unit}`}`;
@@ -151,15 +150,18 @@ const ProviderProfile = () => {
         return;
       }
 
+      // Extract the correct user ID - in ProviderProfile, we need the userId field
+      const providerUserId = provider.userId || provider.id;
+
       console.log('Contacting provider:', {
         providerId: provider.id,
+        providerUserId: providerUserId,
         providerName: provider.name
       });
 
-      // Create a chat with the provider (without specific service)
+      // Create a chat with the provider (without specific service or initial message)
       const requestBody = { 
-        userId: provider.id,
-        initialMessage: `Hi ${provider.name}! I'm interested in your services. Can you tell me more about what you offer?`
+        userId: providerUserId
       };
 
       console.log('Request body:', requestBody);
@@ -180,7 +182,7 @@ const ProviderProfile = () => {
         console.log('Chat created successfully:', chatData);
         
         // Navigate to messages page with the chat ID
-        navigate(`/messages?chat=${chatData._id}&provider=${provider.id}&providerName=${encodeURIComponent(provider.name)}`);
+        navigate(`/messages?chat=${chatData._id}&provider=${providerUserId}&providerName=${encodeURIComponent(provider.name)}`);
       } else {
         const errorText = await response.text();
         console.error('Chat creation failed:', {
@@ -273,7 +275,7 @@ const ProviderProfile = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -284,74 +286,76 @@ const ProviderProfile = () => {
           Back to Services
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Provider Header */}
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-6">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                   {/* Profile Image */}
                   <div className="flex-shrink-0">
-                    <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary rounded-full flex items-center justify-center">
                       {provider.profileImageUrl ? (
                         <img 
                           src={provider.profileImageUrl} 
                           alt={provider.name}
-                          className="w-24 h-24 rounded-full object-cover"
+                          className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
                         />
                       ) : (
-                        <User className="h-12 w-12 text-primary-foreground" />
+                        <User className="h-10 w-10 sm:h-12 sm:w-12 text-primary-foreground" />
                       )}
                     </div>
                   </div>
 
                   {/* Provider Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-2xl font-bold text-gray-900">{provider.name}</h1>
-                      {provider.isVerified && (
-                        <Badge variant="default" className="bg-blue-100 text-blue-800">
-                          <Shield className="h-3 w-3 mr-1" />
-                          Verified
+                  <div className="flex-1 text-center sm:text-left">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                      <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{provider.name}</h1>
+                      <div className="flex items-center justify-center sm:justify-start gap-2">
+                        {provider.isVerified && (
+                          <Badge variant="default" className="bg-blue-100 text-blue-800">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
+                        <Badge variant={provider.status === 'approved' ? 'default' : 'secondary'}>
+                          {provider.status}
                         </Badge>
-                      )}
-                      <Badge variant={provider.status === 'approved' ? 'default' : 'secondary'}>
-                        {provider.status}
-                      </Badge>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                      <div className="flex items-center gap-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center justify-center sm:justify-start gap-1">
                         <Star className="h-4 w-4 text-yellow-400" />
                         <span>{provider.rating.average.toFixed(1)}</span>
                         <span>({provider.rating.count} reviews)</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center sm:justify-start gap-1">
                         <MapPin className="h-4 w-4" />
                         <span>{provider.location}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="hidden sm:flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>Member since {formatDate(provider.memberSince)}</span>
                       </div>
                     </div>
 
                     {provider.bio && (
-                      <p className="text-gray-700 mb-4">{provider.bio}</p>
+                      <p className="text-gray-700 mb-4 text-sm sm:text-base">{provider.bio}</p>
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3">
-                      <Button onClick={handleContactProvider}>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                      <Button onClick={handleContactProvider} className="w-full sm:w-auto">
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Contact Provider
                       </Button>
-                      <Button variant="outline">
+                      <Button variant="outline" className="w-full sm:w-auto">
                         <Heart className="h-4 w-4 mr-2" />
                         Follow
                       </Button>
-                      <Button variant="outline">
+                      <Button variant="outline" className="w-full sm:w-auto">
                         <Share2 className="h-4 w-4 mr-2" />
                         Share
                       </Button>
@@ -363,26 +367,26 @@ const ProviderProfile = () => {
 
             {/* Provider Stats */}
             <Card>
-              <CardHeader>
-                <CardTitle>Provider Statistics</CardTitle>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg sm:text-xl">Provider Statistics</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{provider.totalServices}</div>
-                    <div className="text-sm text-gray-600">Services</div>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{provider.totalServices}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">Services</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{provider.completedProjects}</div>
-                    <div className="text-sm text-gray-600">Projects Completed</div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{provider.completedProjects}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">Projects Completed</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{provider.totalReviews}</div>
-                    <div className="text-sm text-gray-600">Reviews</div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{provider.totalReviews}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">Reviews</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{provider.responseTime}</div>
-                    <div className="text-sm text-gray-600">Response Time</div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{provider.responseTime}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">Response Time</div>
                   </div>
                 </div>
               </CardContent>
@@ -398,26 +402,26 @@ const ProviderProfile = () => {
                     <TabsTrigger value="reviews">Reviews</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="services" className="p-6">
+                  <TabsContent value="services" className="p-4 sm:p-6">
                     {provider.services && provider.services.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         {provider.services.map((service) => (
                           <Card key={service.id} className="cursor-pointer hover:shadow-lg transition-shadow">
                             <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-3">
+                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
                                 <div className="flex-1">
-                                  <h4 className="font-semibold text-lg mb-1">{service.title}</h4>
+                                  <h4 className="font-semibold text-base sm:text-lg mb-1">{service.title}</h4>
                                   <p className="text-gray-600 text-sm line-clamp-2">{service.description}</p>
                                 </div>
                                 {service.featured && (
-                                  <Badge variant="default" className="bg-yellow-100 text-yellow-800 ml-2">
+                                  <Badge variant="default" className="bg-yellow-100 text-yellow-800 self-start">
                                     <Star className="h-3 w-3 mr-1" />
                                     Featured
                                   </Badge>
                                 )}
                               </div>
                               
-                              <div className="flex items-center justify-between mb-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                                 <div className="text-lg font-bold text-primary">
                                   {formatPrice(service.price, service.priceUnit)}
                                 </div>
@@ -443,8 +447,8 @@ const ProviderProfile = () => {
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="about" className="p-6">
-                    <div className="space-y-6">
+                  <TabsContent value="about" className="p-4 sm:p-6">
+                    <div className="space-y-4 sm:space-y-6">
                       {/* Skills */}
                       {provider.skills && provider.skills.length > 0 && (
                         <div>
@@ -512,7 +516,7 @@ const ProviderProfile = () => {
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="reviews" className="p-6">
+                  <TabsContent value="reviews" className="p-4 sm:p-6">
                     <ProviderReviews 
                       providerId={provider.id} 
                       onReviewUpdate={fetchProviderProfile}
@@ -524,13 +528,13 @@ const ProviderProfile = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Contact Card */}
             <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg sm:text-xl">Contact Information</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="space-y-3">
                   <Button 
                     className="w-full" 
@@ -553,35 +557,35 @@ const ProviderProfile = () => {
 
             {/* Provider Details */}
             <Card>
-              <CardHeader>
-                <CardTitle>Provider Details</CardTitle>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg sm:text-xl">Provider Details</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span>{provider.location}</span>
+                    <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="break-words">{provider.location}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-gray-500" />
+                    <Briefcase className="h-4 w-4 text-gray-500 flex-shrink-0" />
                     <span>{provider.totalServices} services</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <AwardIcon className="h-4 w-4 text-gray-500" />
+                    <AwardIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
                     <span>{provider.completedProjects} projects completed</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <ClockIcon className="h-4 w-4 text-gray-500" />
+                    <ClockIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
                     <span>Response time: {provider.responseTime}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span>Member since {formatDate(provider.memberSince)}</span>
+                    <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="break-words">Member since {formatDate(provider.memberSince)}</span>
                   </div>
                   {provider.lastActive && (
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <span>Last active: {formatDate(provider.lastActive)}</span>
+                      <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="break-words">Last active: {formatDate(provider.lastActive)}</span>
                     </div>
                   )}
                 </div>
@@ -590,12 +594,12 @@ const ProviderProfile = () => {
 
             {/* Rating Summary */}
             <Card>
-              <CardHeader>
-                <CardTitle>Rating Summary</CardTitle>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg sm:text-xl">Rating Summary</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary mb-2">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary mb-2">
                     {provider.rating.average.toFixed(1)}
                   </div>
                   <div className="flex items-center justify-center gap-1 mb-2">

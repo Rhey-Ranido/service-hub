@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { API_BASE_URL } from '../config/api';
+import LocationPermissionButton from './LocationPermissionButton';
 import { 
   Search, 
   MapPin, 
@@ -162,85 +165,21 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
   const [searchRadius, setSearchRadius] = useState(5); // Default 5km radius
   const searchTimeoutRef = useRef(null);
 
-  const API_BASE_URL = 'http://localhost:3000/api';
 
-  // Location permission handling
+
+  // Location permission handling - now controlled by parent component
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationStatus('error');
-      return;
+    // Update internal locationStatus based on locationPermission prop
+    if (locationPermission === 'granted') {
+      setLocationStatus('success');
+    } else if (locationPermission === 'denied') {
+      setLocationStatus('denied');
+    } else {
+      setLocationStatus('idle');
     }
+  }, [locationPermission]);
 
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-        if (result.state === 'granted') {
-          getCurrentLocation();
-        } else if (result.state === 'denied') {
-          setLocationStatus('denied');
-        }
-        
-        result.addEventListener('change', () => {
-          if (result.state === 'granted') {
-            getCurrentLocation();
-          } else if (result.state === 'denied') {
-            setLocationStatus('denied');
-          }
-        });
-      });
-    }
-  }, []);
-
-  const getCurrentLocation = () => {
-    setLocationStatus('loading');
-    
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const location = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy
-        };
-        setLocationStatus('success');
-        if (onLocationGranted) {
-          onLocationGranted(location);
-        }
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setLocationStatus('error');
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationStatus('denied');
-            if (onLocationDenied) {
-              onLocationDenied('permission_denied');
-            }
-            break;
-          case error.POSITION_UNAVAILABLE:
-            if (onLocationDenied) {
-              onLocationDenied('position_unavailable');
-            }
-            break;
-          case error.TIMEOUT:
-            if (onLocationDenied) {
-              onLocationDenied('timeout');
-            }
-            break;
-          default:
-            if (onLocationDenied) {
-              onLocationDenied('unknown');
-            }
-        }
-      },
-      options
-    );
-  };
+  // getCurrentLocation function removed - now handled by LocationPermissionButton
 
   const getCategoryColor = (category) => {
     const colors = {
@@ -387,11 +326,7 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
 
 
 
-  const handleUseMyLocation = () => {
-    if (userLocation) {
-      performSearch({ sortBy: 'distance' });
-    }
-  };
+  // handleUseMyLocation function removed - now handled by LocationPermissionButton
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -419,36 +354,38 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
   }).sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-0">
       {/* Search Form with Integrated Map */}
       <Card className="mb-4 shadow-sm border-0">
-        <CardHeader className="pb-3 px-6">
-          <CardTitle className="flex items-center justify-between text-lg font-semibold">
+        <CardHeader className="pb-3 px-4 sm:px-6">
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-lg font-semibold">
             <div className="flex items-center gap-2">
               <Search className="h-5 w-5 text-primary" />
               Search Services
             </div>
-            {locationStatus === 'success' && (
-              <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-green-50 text-green-700 border-green-200">
-                <Shield className="h-3 w-3" />
-                Location Enabled
-              </Badge>
-            )}
-            {locationStatus === 'denied' && (
-              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
-                <AlertCircle className="h-3 w-3" />
-                Location Disabled
-              </Badge>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {locationPermission === 'granted' && userLocation && (
+                <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-green-50 text-green-700 border-green-200">
+                  <MapPin className="h-3 w-3" />
+                  Location Active
+                </Badge>
+              )}
+              {locationPermission === 'denied' && (
+                <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                  <AlertCircle className="h-3 w-3" />
+                  Location Disabled
+                </Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {/* Search Form */}
-          <div className="px-6 pb-4">
+          <div className="px-4 sm:px-6 pb-4">
             <form onSubmit={handleSearchSubmit} className="space-y-3">
             {/* Main Search Bar and Quick Actions */}
-            <div className="flex gap-3 items-center">
-              <div className="relative flex-1 max-w-md">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <div className="relative flex-1 sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   type="text"
@@ -458,80 +395,69 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                   className="pl-10 h-11 border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
-              <Button 
-                type="submit" 
-                className="h-11 px-8 font-medium"
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Search className="h-4 w-4 mr-2" />
+              
+              {/* Location Permission Button */}
+              <LocationPermissionButton
+                locationPermission={locationPermission}
+                onLocationGranted={onLocationGranted}
+                onLocationDenied={onLocationDenied}
+                onUseLocation={() => performSearch({ sortBy: 'distance' })}
+                className="h-11"
+              />
+              
+              {/* Action buttons - responsive layout */}
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <Button 
+                  type="submit" 
+                  className="h-11 px-4 sm:px-8 font-medium flex-1 sm:flex-none"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Search className="h-4 w-4 mr-2" />
+                  )}
+                  <span className="hidden sm:inline">Search</span>
+                  <span className="sm:hidden">Go</span>
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2 h-11 px-3 sm:px-4 text-sm font-medium border-gray-200 hover:border-gray-300"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="hidden sm:inline">{showFilters ? 'Hide' : 'Filters'}</span>
+                </Button>
+                
+
+
+                <Button
+                  type="button"
+                  variant={showMap ? "default" : "outline"}
+                  size="sm"
+                  onClick={onMapToggle}
+                  className="flex items-center gap-2 h-11 px-3 sm:px-4 text-sm font-medium"
+                >
+                  <Map className="h-4 w-4" />
+                  <span className="hidden sm:inline">{showMap ? 'List' : 'Map'}</span>
+                </Button>
+
+                {(searchTerm || selectedCategory !== 'all' || priceRange !== 'all') && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 h-11 px-3 sm:px-4 text-sm font-medium border-gray-200 hover:border-gray-300"
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="hidden sm:inline">Clear</span>
+                  </Button>
                 )}
-                Search
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 h-11 px-4 text-sm font-medium border-gray-200 hover:border-gray-300"
-              >
-                <Filter className="h-4 w-4" />
-                {showFilters ? 'Hide' : 'Filters'}
-              </Button>
-              
-              {userLocation && locationPermission === 'granted' && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUseMyLocation}
-                  className="flex items-center gap-2 h-11 px-4 text-sm font-medium border-gray-200 hover:border-gray-300"
-                >
-                  <MapPin className="h-4 w-4" />
-                  Location
-                </Button>
-              )}
-              
-              {locationPermission === 'denied' && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="flex items-center gap-2 h-11 px-4 text-sm font-medium border-gray-200"
-                  title="Enable location access to use this feature"
-                >
-                  <MapPin className="h-4 w-4" />
-                  Location
-                </Button>
-              )}
-
-              <Button
-                type="button"
-                variant={showMap ? "default" : "outline"}
-                size="sm"
-                onClick={onMapToggle}
-                className="flex items-center gap-2 h-11 px-4 text-sm font-medium"
-              >
-                <Map className="h-4 w-4" />
-                {showMap ? 'List' : 'Map'}
-              </Button>
-
-              {(searchTerm || selectedCategory !== 'all' || priceRange !== 'all') && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="flex items-center gap-2 h-11 px-4 text-sm font-medium border-gray-200 hover:border-gray-300"
-                >
-                  <X className="h-4 w-4" />
-                  Clear
-                </Button>
-              )}
+              </div>
             </div>
 
             {/* Error Alert */}
@@ -544,7 +470,7 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-700">Category</label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -596,7 +522,7 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-700">Search Radius</label>
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
                     <Input
                       type="number"
                       placeholder="5"
@@ -605,9 +531,9 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                       min="0.1"
                       max="50"
                       step="0.1"
-                      className="h-10 border-gray-200 text-sm"
+                      className="h-10 border-gray-200 text-sm flex-1"
                     />
-                    <span className="text-sm text-gray-600 font-medium">km</span>
+                    <span className="text-sm text-gray-600 font-medium flex-shrink-0">km</span>
                   </div>
                 </div>
               </div>
@@ -620,8 +546,8 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
 
           {/* Map Container */}
           {showMap && (
-            <div className="px-6 pb-6">
-              <div className="h-96 rounded-lg overflow-hidden border border-gray-200" style={{ minHeight: '400px' }}>
+            <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+              <div className="h-64 sm:h-80 lg:h-96 rounded-lg overflow-hidden border border-gray-200">
                 <MapContainer
                   center={userLocation ? [userLocation.lat, userLocation.lng] : [37.7749, -122.4194]}
                   zoom={userLocation ? 13 : 10} // Zoom level 13 shows roughly 5km radius
@@ -751,21 +677,22 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
 
           {/* Selected Service Card */}
           {selectedService && (
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg text-gray-900">Selected Service</h3>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-900">Selected Service</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setSelectedService(null)}
+                    className="h-8 w-8 p-0"
                   >
-                    ×
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
                 
                 <div>
-                  <h3 className="font-semibold text-lg">{selectedService.title}</h3>
+                  <h3 className="font-semibold text-base sm:text-lg mb-2">{selectedService.title}</h3>
                   <div className="flex items-center gap-2">
                     {/* Provider Profile Image - Show actual image if available, otherwise show user icon */}
                     {selectedService.provider?.profileImageUrl ? (
@@ -786,11 +713,11 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                     }`}>
                       <User className="w-4 h-4 text-blue-600" />
                     </div>
-                  <p className="text-sm text-gray-600">{selectedService.provider.name}</p>
+                    <p className="text-sm text-gray-600">{selectedService.provider.name}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 text-yellow-400 fill-current" />
                     <span>{(selectedService.rating?.average || selectedService.provider?.rating || 0).toFixed(1)}</span>
@@ -801,7 +728,7 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                   </div>
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4 text-gray-500" />
-                    <span>{selectedService.provider.location}</span>
+                    <span className="truncate max-w-32 sm:max-w-none">{selectedService.provider.location}</span>
                   </div>
                   {selectedService.distance && (
                     <Badge variant="secondary" className="flex items-center gap-1">
@@ -811,11 +738,11 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleServiceCardClick(selectedService)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 flex-1 sm:flex-none"
                   >
                     <ExternalLink className="h-4 w-4" />
                     View Details
@@ -827,7 +754,7 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
                       const [lng, lat] = selectedService.provider.coordinates;
                       window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
                     }}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 flex-1 sm:flex-none"
                   >
                     <Navigation className="h-4 w-4" />
                     Directions

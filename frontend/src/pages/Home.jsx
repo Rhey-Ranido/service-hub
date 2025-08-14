@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +6,7 @@ import Footer from '../components/Footer';
 import ServiceCard from "../components/ServiceCard";
 import ServiceSearch from "../components/ServiceSearch";
 import TestimonialCarousel from '../components/TestimonialCarousel';
+import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,7 @@ export default function Home() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState('unknown'); // unknown, granted, denied
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   const handleServiceClick = (service) => {
     // Navigate to service details page
@@ -97,21 +97,21 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/5 via-background to-primary/5 py-20">
+      <section className="relative bg-gradient-to-br from-primary/5 via-background to-primary/5 py-12 sm:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 sm:mb-6">
               Find the Perfect
               <span className="text-primary block">Service Provider</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-3xl mx-auto px-4 sm:px-0">
               Connect with verified professionals for all your service needs. From web development to home services, we've got you covered.
             </p>
             
 
 
             {/* Search Section */}
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
               <ServiceSearch 
                 onSearchResults={handleSearchResults}
                 onMapToggle={handleMapToggle}
@@ -125,14 +125,14 @@ export default function Home() {
 
             {/* Search Results */}
             {searchResults.length > 0 && !showMap && (
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-foreground">
+              <div className="mt-6 sm:mt-8">
+                <div className="flex items-center justify-between mb-4 sm:mb-6 px-4 sm:px-0">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                     Search Results ({searchResults.length})
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-0">
                   {searchResults.map((service) => {
                     // Calculate distance if user location is available
                     let distance = null;
@@ -158,7 +158,7 @@ export default function Home() {
                         {distance && (
                           <Badge 
                             variant="secondary" 
-                            className="absolute top-2 right-2 flex items-center gap-1"
+                            className="absolute top-2 right-2 flex items-center gap-1 text-xs"
                           >
                             <MapPin className="h-3 w-3" />
                             {distance} km
@@ -171,10 +171,10 @@ export default function Home() {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
               <Button 
                 size="lg" 
-                className="text-lg px-8 py-3"
+                className="text-base sm:text-lg px-6 sm:px-8 py-3 w-full sm:w-auto"
                 onClick={() => navigate("/services")}
               >
                 Browse All Services
@@ -182,7 +182,7 @@ export default function Home() {
               <Button 
                 variant="outline" 
                 size="lg"
-                className="text-lg px-8 py-3"
+                className="text-base sm:text-lg px-6 sm:px-8 py-3 w-full sm:w-auto"
                 onClick={() => navigate("/register")}
               >
                 Become a Provider
@@ -193,16 +193,16 @@ export default function Home() {
       </section>
 
       {/* Featured Services Section */}
-      <section className="py-20">
+      <section className="py-12 sm:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Featured Services</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">Featured Services</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
               Discover top-rated services from our verified providers. Quality guaranteed, satisfaction assured.
             </p>
             <Button 
                 variant="outline" 
-                className="flex items-center gap-2 hover:gap-3 transition-all mt-6"
+                className="flex items-center gap-2 hover:gap-3 transition-all mt-4 sm:mt-6 mx-auto"
                 onClick={() => navigate("/services")}
               >
                 See All Services
@@ -211,21 +211,21 @@ export default function Home() {
           </div>
           
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-8 sm:py-12">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                <p className="text-muted-foreground">Loading featured services...</p>
+                <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-3 sm:mb-4 text-primary" />
+                <p className="text-sm sm:text-base text-muted-foreground">Loading featured services...</p>
               </div>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button onClick={fetchFeaturedServices} variant="outline">
+            <div className="text-center py-8 sm:py-12">
+              <p className="text-red-500 mb-3 sm:mb-4 text-sm sm:text-base">{error}</p>
+              <Button onClick={fetchFeaturedServices} variant="outline" size="sm">
                 Try Again
               </Button>
             </div>
           ) : featuredServices.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {featuredServices.map((service) => (
                 <ServiceCard 
                   key={service.id}
@@ -235,9 +235,9 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No featured services available</p>
-              <Button onClick={() => navigate("/services")} variant="outline">
+            <div className="text-center py-8 sm:py-12">
+              <p className="text-muted-foreground mb-3 sm:mb-4 text-sm sm:text-base">No featured services available</p>
+              <Button onClick={() => navigate("/services")} variant="outline" size="sm">
                 Browse All Services
               </Button>
             </div>
@@ -246,41 +246,41 @@ export default function Home() {
       </section>
 
       {/* Features section */}
-      <section className="py-20">
+      <section className="py-12 sm:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="h-12 w-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="h-6 w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <div className="text-center p-4 sm:p-6">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Find Services</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">Find Services</h3>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Search and discover qualified service providers in your area for any task.
               </p>
             </div>
             
-            <div className="text-center p-6">
-              <div className="h-12 w-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="h-6 w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center p-4 sm:p-6">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Connect & Chat</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">Connect & Chat</h3>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Direct messaging with providers to discuss your project requirements and get quotes.
               </p>
             </div>
             
-            <div className="text-center p-6">
-              <div className="h-12 w-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="h-6 w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center p-4 sm:p-6">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Get It Done</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">Get It Done</h3>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Hire the right provider and get your project completed with quality and satisfaction guaranteed.
               </p>
             </div>
@@ -289,11 +289,11 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-br from-muted/50 to-background">
+      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-muted/50 to-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">What Our Users Say</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">What Our Users Say</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
               Don't just take our word for it. Here's what real users have to say about their experience with ServiceHub.
             </p>
           </div>

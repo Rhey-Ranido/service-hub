@@ -86,3 +86,5 @@ After seeding, you can use these credentials:
 - **Provider**: jerson.caibog@example.com / password123
 - **Client**: client@example.com / password123
 - **Admin**: admin@example.com / password123
+
+

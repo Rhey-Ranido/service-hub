@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 import { 
   Users,
   Briefcase,
@@ -52,7 +53,7 @@ const AdminDashboard = () => {
   const [adminFeedback, setAdminFeedback] = useState('');
   const [actionType, setActionType] = useState('');
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
 
   // Check if user is admin and redirect if not
   useEffect(() => {

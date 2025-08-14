@@ -226,6 +226,7 @@ export const getProviderById = async (req, res) => {
     // Format response
     const formattedProvider = {
       id: provider._id,
+      userId: provider.userId._id, // Include the User ID for chat functionality
       name: provider.name,
       bio: provider.bio,
       profileImage: provider.userId.profileImage,
@@ -254,7 +255,8 @@ export const getProviderById = async (req, res) => {
         isVerified: provider.userId.isVerified,
         profileImage: provider.userId.profileImage,
         profileImageUrl: provider.userId.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${provider.userId.profileImage}` : null
-      }
+      },
+      services: servicesWithRealRatings
     };
 
     res.status(200).json(formattedProvider);

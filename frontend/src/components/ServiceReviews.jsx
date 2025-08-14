@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { API_BASE_URL } from '../config/api';
 import { Star, User, Calendar, Edit, Trash2, Loader2 } from 'lucide-react';
 
 const ServiceReviews = ({ serviceId, onReviewUpdate }) => {
@@ -19,7 +20,7 @@ const ServiceReviews = ({ serviceId, onReviewUpdate }) => {
     comment: ''
   });
 
-  const API_BASE_URL = 'http://localhost:3000/api';
+
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
 
@@ -214,33 +215,32 @@ const ServiceReviews = ({ serviceId, onReviewUpdate }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Reviews ({reviews.length})</CardTitle>
-          {token && !userHasReviewed && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowReviewForm(true)}
-            >
-              Write a Review
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Error/Success Messages */}
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+    <div className="space-y-4">
+      {/* Reviews Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h3 className="text-lg sm:text-xl font-semibold">Reviews ({reviews.length})</h3>
+        {token && !userHasReviewed && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowReviewForm(true)}
+            className="w-full sm:w-auto"
+          >
+            Write a Review
+          </Button>
         )}
-        {success && (
-          <Alert className="mb-4">
-            <AlertDescription>{success}</AlertDescription>
-          </Alert>
-        )}
+      </div>
+      {/* Error/Success Messages */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {success && (
+        <Alert>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
 
         {/* Review Form */}
         {showReviewForm && (
@@ -388,8 +388,7 @@ const ServiceReviews = ({ serviceId, onReviewUpdate }) => {
               ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 };
 
