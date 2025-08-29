@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "start": "PORT=3000 node server.js",
-    "dev": "PORT=3000 npx nodemon server.js",
+    "dev": "npx nodemon server.js",
     "seed": "node scripts/seedData.js",
     "update-ratings": "node scripts/updateRatings.js"
   },

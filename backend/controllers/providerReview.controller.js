@@ -17,7 +17,7 @@ export const getAllProviderReviews = async (req, res) => {
 
     // Fetch provider reviews
     const reviews = await ProviderReview.find({ providerId })
-      .populate("userId", "name")
+      .populate("userId", "firstName lastName fullName")
       .sort({ createdAt: -1 });
 
     res.status(200).json(reviews);
@@ -71,7 +71,7 @@ export const createProviderReview = async (req, res) => {
     await Provider.updateRatingStats(providerId);
 
     // Populate user information for response
-    await newReview.populate("userId", "name");
+    await newReview.populate("userId", "firstName lastName fullName");
 
     res.status(201).json(newReview);
   } catch (error) {
@@ -121,7 +121,7 @@ export const updateProviderReview = async (req, res) => {
     // Update provider rating statistics using the static method
     await Provider.updateRatingStats(review.providerId);
 
-    await review.populate("userId", "name");
+    await review.populate("userId", "firstName lastName fullName");
 
     res.status(200).json({ message: "Review updated successfully", review });
   } catch (error) {

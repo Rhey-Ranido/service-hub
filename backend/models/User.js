@@ -58,4 +58,21 @@ userSchema.methods.comparePassword = function (inputPassword) {
   return bcrypt.compare(inputPassword, this.password);
 };
 
+// Virtual for full name
+userSchema.virtual('fullName').get(function() {
+  if (this.firstName && this.lastName) {
+    return `${this.firstName} ${this.lastName}`;
+  } else if (this.firstName) {
+    return this.firstName;
+  } else if (this.lastName) {
+    return this.lastName;
+  } else {
+    return 'Anonymous';
+  }
+});
+
+// Ensure virtual fields are serialized
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 export default mongoose.model("User", userSchema);

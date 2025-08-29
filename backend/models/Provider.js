@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 // Import the ProviderReview model to avoid circular dependency issues
-import ProviderReview from "./ProviderReview.js";
+// import ProviderReview from "./ProviderReview.js";
 
 const providerSchema = new Schema(
   {
@@ -56,6 +56,7 @@ providerSchema.index({ "location": "2dsphere" });
 
 // Static method to update provider rating statistics
 providerSchema.statics.updateRatingStats = async function(providerId) {
+  const ProviderReview = mongoose.model('ProviderReview');
   const reviews = await ProviderReview.find({ providerId });
   const count = reviews.length;
   const average = count > 0 
