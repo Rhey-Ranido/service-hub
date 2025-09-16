@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ServiceCard from '../components/ServiceCard';
@@ -18,9 +18,12 @@ import {
   X,
   Search
 } from 'lucide-react';
+import { initializeLocationFromStorage, clearUserLocation } from '../utils/locationUtils';
+import { loadCurrentSearchState, hasSearchResults } from '../utils/searchResultsUtils';
 
 const Services = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [services, setServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +33,7 @@ const Services = () => {
   const [showMap, setShowMap] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState('unknown');
+  const [restoredSearchResults, setRestoredSearchResults] = useState(null);
   const servicesPerPage = 12;
 
 
@@ -52,6 +56,11 @@ const Services = () => {
   const handleLocationDenied = (reason) => {
     setLocationPermission('denied');
     console.log('Location access denied:', reason);
+  };
+
+  const handleExternalResultsProcessed = () => {
+    // Clear external search results after they've been processed
+    setRestoredSearchResults(null);
   };
 
   // Fetch services from backend
@@ -134,7 +143,74 @@ const Services = () => {
 
   useEffect(() => {
     fetchServices();
+    
+    // Initialize location from localStorage
+    const { location, permission } = initializeLocationFromStorage();
+    if (location) {
+      setUserLocation(location);
+    }
+    if (permission) {
+      setLocationPermission(permission);
+    }
   }, []);
+
+  // Listen for logout events to clear location
+  useEffect(() => {
+    const handleLogout = () => {
+      console.log('Logout detected, clearing user location');
+      setUserLocation(null);
+      setLocationPermission('unknown');
+      clearUserLocation();
+    };
+
+    // Listen for custom logout event
+    window.addEventListener('userLoggedOut', handleLogout);
+    
+    // Also listen for storage changes (in case of logout in another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' && !e.newValue) {
+        handleLogout();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('userLoggedOut', handleLogout);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Handle returning from service details page
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const returnFromService = urlParams.get('returnFromService');
+    
+    if (returnFromService === 'true' && hasSearchResults()) {
+      console.log('Returning from service details, restoring search results...');
+      
+      const searchState = loadCurrentSearchState();
+      if (searchState) {
+        setFilteredServices(searchState.results);
+        setUserLocation(searchState.userLocation);
+        setShowMap(true); // Always open map when returning from service details
+        setRestoredSearchResults(searchState.results);
+        
+        // Update location permission if we have location data
+        if (searchState.userLocation) {
+          setLocationPermission('granted');
+        }
+        
+        // Log service locations being restored
+        if (searchState.serviceLocations) {
+          console.log('Restoring service locations for map:', searchState.serviceLocations.length, 'locations');
+        }
+        
+        // Clean up URL parameters
+        navigate('/services', { replace: true });
+      }
+    }
+  }, [location.search, navigate]);
 
   // Pagination
   const totalPages = Math.ceil(filteredServices.length / servicesPerPage);
@@ -218,6 +294,9 @@ const Services = () => {
             locationPermission={locationPermission}
             onLocationGranted={handleLocationGranted}
             onLocationDenied={handleLocationDenied}
+            sourcePage="/services"
+            externalSearchResults={restoredSearchResults}
+            onExternalResultsProcessed={handleExternalResultsProcessed}
           />
         </div>
 

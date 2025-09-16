@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2, X, RefreshCw } from 'lucide-react';
+import { saveUserLocation, saveLocationPermission } from '../utils/locationUtils';
 
 const LocationPermissionButton = ({ 
   locationPermission, 
@@ -81,6 +82,11 @@ const LocationPermissionButton = ({
       };
 
       console.log('LocationPermissionButton: Location data:', location);
+      
+      // Save location to localStorage
+      saveUserLocation(location);
+      saveLocationPermission('granted');
+      
       onLocationGranted(location);
     } catch (error) {
       console.error('LocationPermissionButton: Geolocation error:', error);
@@ -105,6 +111,9 @@ const LocationPermissionButton = ({
           reason = `Error: ${error.message}`;
           console.log('LocationPermissionButton: Unknown error:', error.message);
       }
+      
+      // Save denied status to localStorage
+      saveLocationPermission('denied');
       
       onLocationDenied(reason);
     } finally {

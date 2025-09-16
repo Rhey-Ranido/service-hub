@@ -7,6 +7,7 @@ import ServiceReviews from '../components/ServiceReviews';
 import ServiceLocationMap from '../components/ServiceLocationMap';
 import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
+import { hasSearchResults, loadCurrentSearchState } from '../utils/searchResultsUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -295,11 +296,26 @@ const ServiceDetails = () => {
         {/* Back Button */}
         <Button
           variant="ghost"
-          onClick={() => navigate('/services')}
+          onClick={() => {
+            // Check if there are saved search results
+            if (hasSearchResults()) {
+              const searchState = loadCurrentSearchState();
+              if (searchState) {
+                // Navigate back to the page that had the search results
+                // Use the sourcePage to determine where to navigate back to
+                const targetPage = searchState.sourcePage || '/services';
+                navigate(`${targetPage}?returnFromService=true&serviceId=${id}`);
+              } else {
+                navigate('/services');
+              }
+            } else {
+              navigate('/services');
+            }
+          }}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Services
+          {hasSearchResults() ? 'Back to Search Results' : 'Back to Services'}
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

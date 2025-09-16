@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { API_BASE_URL } from '../config/api';
 import LocationPermissionButton from './LocationPermissionButton';
+import { saveSearchResults, saveCurrentSearchState, clearSearchResults, clearCurrentSearchState } from '../utils/searchResultsUtils';
 import { 
   Search, 
   MapPin, 
@@ -149,7 +150,7 @@ const MapController = ({ center, zoom, services, userLocation, searchRadius }) =
   return null;
 };
 
-const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLocation = null, locationPermission = 'unknown', onLocationGranted, onLocationDenied }) => {
+const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLocation = null, locationPermission = 'unknown', onLocationGranted, onLocationDenied, sourcePage = '/', externalSearchResults = null, onExternalResultsProcessed }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -178,6 +179,20 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
       setLocationStatus('idle');
     }
   }, [locationPermission]);
+
+  // Handle external search results (for restoring saved search state)
+  useEffect(() => {
+    if (externalSearchResults && externalSearchResults.length > 0) {
+      console.log('ServiceSearch: Restoring external search results:', externalSearchResults.length, 'services');
+      setSearchResults(externalSearchResults);
+      onSearchResults(externalSearchResults);
+      
+      // Notify parent component that external results have been processed
+      if (onExternalResultsProcessed) {
+        onExternalResultsProcessed();
+      }
+    }
+  }, [externalSearchResults, onSearchResults, onExternalResultsProcessed]);
 
   // getCurrentLocation function removed - now handled by LocationPermissionButton
 
@@ -290,11 +305,31 @@ const ServiceSearch = ({ onSearchResults, onMapToggle, showMap = false, userLoca
       
       setSearchResults(services);
       onSearchResults(services);
+      
+      // Clear previous search results before saving new ones
+      clearSearchResults();
+      clearCurrentSearchState();
+      
+      // Save new search results to localStorage for back navigation
+      const currentSearchParams = {
+        search: searchParams.search || searchTerm,
+        category: searchParams.category || selectedCategory,
+        sortBy: searchParams.sortBy || sortBy,
+        priceRange: searchParams.priceRange || priceRange,
+        radius: searchRadius
+      };
+      
+      saveSearchResults(services, currentSearchParams, userLocation);
+      saveCurrentSearchState(services, currentSearchParams, userLocation, showMap, sourcePage);
     } catch (error) {
       console.error('Search error:', error);
       setError('Failed to search services. Please try again.');
       setSearchResults([]);
       onSearchResults([]);
+      
+      // Clear search results on error to avoid stale data
+      clearSearchResults();
+      clearCurrentSearchState();
     } finally {
       setLoading(false);
     }

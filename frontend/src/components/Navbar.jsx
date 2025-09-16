@@ -86,6 +86,10 @@ const Navbar = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    
+    // Dispatch logout event to clear location data
+    window.dispatchEvent(new CustomEvent('userLoggedOut'));
+    
     navigate('/');
     setIsOpen(false);
   };

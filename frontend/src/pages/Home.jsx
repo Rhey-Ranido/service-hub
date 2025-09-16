@@ -1,6 +1,6 @@
 // src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ServiceCard from "../components/ServiceCard";
@@ -11,9 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Loader2, Map, Grid3X3, MapPin, Star, DollarSign } from 'lucide-react';
+import { initializeLocationFromStorage, clearUserLocation } from '../utils/locationUtils';
+import { loadCurrentSearchState, hasSearchResults } from '../utils/searchResultsUtils';
 
 export default function Home() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [featuredServices, setFeaturedServices] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +24,7 @@ export default function Home() {
   const [showMap, setShowMap] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState('unknown'); // unknown, granted, denied
+  const [restoredSearchResults, setRestoredSearchResults] = useState(null);
 
 
 
@@ -45,6 +49,11 @@ export default function Home() {
   const handleLocationDenied = (reason) => {
     setLocationPermission('denied');
     console.log('Location access denied:', reason);
+  };
+
+  const handleExternalResultsProcessed = () => {
+    // Clear external search results after they've been processed
+    setRestoredSearchResults(null);
   };
 
   const fetchFeaturedServices = async () => {
@@ -88,7 +97,74 @@ export default function Home() {
 
   useEffect(() => {
     fetchFeaturedServices();
+    
+    // Initialize location from localStorage
+    const { location, permission } = initializeLocationFromStorage();
+    if (location) {
+      setUserLocation(location);
+    }
+    if (permission) {
+      setLocationPermission(permission);
+    }
   }, []);
+
+  // Listen for logout events to clear location
+  useEffect(() => {
+    const handleLogout = () => {
+      console.log('Logout detected, clearing user location');
+      setUserLocation(null);
+      setLocationPermission('unknown');
+      clearUserLocation();
+    };
+
+    // Listen for custom logout event
+    window.addEventListener('userLoggedOut', handleLogout);
+    
+    // Also listen for storage changes (in case of logout in another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' && !e.newValue) {
+        handleLogout();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('userLoggedOut', handleLogout);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Handle returning from service details page
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const returnFromService = urlParams.get('returnFromService');
+    
+    if (returnFromService === 'true' && hasSearchResults()) {
+      console.log('Returning from service details, restoring search results...');
+      
+      const searchState = loadCurrentSearchState();
+      if (searchState) {
+        setSearchResults(searchState.results);
+        setUserLocation(searchState.userLocation);
+        setShowMap(true); // Always open map when returning from service details
+        setRestoredSearchResults(searchState.results);
+        
+        // Update location permission if we have location data
+        if (searchState.userLocation) {
+          setLocationPermission('granted');
+        }
+        
+        // Log service locations being restored
+        if (searchState.serviceLocations) {
+          console.log('Restoring service locations for map:', searchState.serviceLocations.length, 'locations');
+        }
+        
+        // Clean up URL parameters
+        navigate('/', { replace: true });
+      }
+    }
+  }, [location.search, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,6 +194,9 @@ export default function Home() {
                 locationPermission={locationPermission}
                 onLocationGranted={handleLocationGranted}
                 onLocationDenied={handleLocationDenied}
+                sourcePage="/"
+                externalSearchResults={restoredSearchResults}
+                onExternalResultsProcessed={handleExternalResultsProcessed}
               />
             </div>
 
