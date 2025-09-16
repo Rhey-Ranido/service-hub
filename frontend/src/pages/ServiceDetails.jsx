@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ServiceReviews from '../components/ServiceReviews';
+import ServiceLocationMap from '../components/ServiceLocationMap';
 import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,11 +61,7 @@ const ServiceDetails = () => {
 
 
 
-  useEffect(() => {
-    fetchServiceDetails();
-  }, [id]);
-
-  const fetchServiceDetails = async () => {
+  const fetchServiceDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -87,7 +84,11 @@ const ServiceDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchServiceDetails();
+  }, [fetchServiceDetails]);
 
   const formatPrice = (price, unit) => {
     return `₱${price}${unit === 'hour' ? '/hr' : unit === 'project' ? '/project' : `/${unit}`}`;
@@ -431,6 +432,22 @@ const ServiceDetails = () => {
               </CardContent>
             </Card>
 
+            {/* Service Location Map */}
+            <ServiceLocationMap 
+              service={service} 
+              onLocationUpdate={(locationData) => {
+                // Update the service data with new provider location
+                setService(prevService => ({
+                  ...prevService,
+                  provider: {
+                    ...prevService.provider,
+                    location: locationData.location,
+                    coordinates: locationData.coordinates
+                  }
+                }));
+              }}
+            />
+
             {/* Service Details Tabs */}
             <Card>
               <CardContent className="p-0">
@@ -732,14 +749,7 @@ const ServiceDetails = () => {
                     <Briefcase className="h-4 w-4 text-gray-500" />
                     <span>{service.provider.totalServices || 0} services</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <AwardIcon className="h-4 w-4 text-gray-500" />
-                    <span>{service.provider.completedProjects || 0} projects completed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ClockIcon className="h-4 w-4 text-gray-500" />
-                    <span>Response time: {service.provider.responseTime || 'Not specified'}</span>
-                  </div>
+
                   {service.provider.memberSince && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />

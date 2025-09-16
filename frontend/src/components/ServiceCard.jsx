@@ -127,15 +127,7 @@ const ServiceCard = ({ service, onClick }) => {
 
         </div>
         
-        {/* Featured badge */}
-        {service.featured && (
-          <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
-            <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs">
-              <Star className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
-              Featured
-            </Badge>
-          </div>
-        )}
+
         
         {/* Price badge */}
         <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
@@ -266,18 +258,8 @@ const ServiceCard = ({ service, onClick }) => {
           {/* Provider Stats */}
           <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/30 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
             <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-              {service.provider?.totalServices && (
-                <div className="flex items-center space-x-1">
-                  <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
-                  <span className="truncate">{service.provider.totalServices} services</span>
-                </div>
-              )}
-              {service.totalOrders > 0 && (
-                <div className="flex items-center space-x-1">
-                  <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
-                  <span className="truncate">{service.totalOrders} orders</span>
-                </div>
-              )}
+
+
             </div>
             {service.provider?.responseTime && (
               <span className="text-primary font-medium text-xs flex-shrink-0 hidden sm:inline">
@@ -295,9 +277,7 @@ const ServiceCard = ({ service, onClick }) => {
               <span>Delivery: {service.deliveryTime}</span>
             </div>
           )}
-          {service.totalOrders > 0 && (
-            <span className="hidden sm:inline">{service.totalOrders} orders completed</span>
-          )}
+
         </div>
 
         {/* Action Button */}

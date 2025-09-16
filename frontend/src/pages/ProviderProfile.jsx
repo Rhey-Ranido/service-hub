@@ -95,6 +95,25 @@ const ProviderProfile = () => {
     fetchProviderProfile();
   }, [fetchProviderProfile]);
 
+  // Listen for provider location updates
+  useEffect(() => {
+    const handleProviderLocationUpdate = (event) => {
+      console.log('Provider location updated in ProviderProfile:', event.detail);
+      if (event.detail && event.detail.providerId === id) {
+        // Refresh provider profile data to get updated location
+        fetchProviderProfile();
+      }
+    };
+
+    // Add event listener for provider location updates
+    window.addEventListener('providerLocationUpdated', handleProviderLocationUpdate);
+
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener('providerLocationUpdated', handleProviderLocationUpdate);
+    };
+  }, [id, fetchProviderProfile]);
+
   const formatPrice = (price, unit) => {
     return `₱${price}${unit === 'hour' ? '/hr' : unit === 'project' ? '/project' : `/${unit}`}`;
   };

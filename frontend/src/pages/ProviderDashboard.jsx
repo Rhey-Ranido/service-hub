@@ -41,7 +41,6 @@ const ProviderDashboard = () => {
   const [services, setServices] = useState([]);
   const [stats, setStats] = useState({
     totalServices: 0,
-    totalOrders: 0,
     totalEarnings: 0,
     averageRating: 0
   });
@@ -109,14 +108,12 @@ const ProviderDashboard = () => {
         // Calculate stats from services
         const serviceStats = servicesData.services?.reduce((acc, service) => ({
           totalServices: acc.totalServices + 1,
-          totalOrders: acc.totalOrders + (service.totalOrders || 0),
           averageRating: acc.averageRating + (service.rating?.average || 0)
         }), {
           totalServices: 0,
-          totalOrders: 0,
           totalEarnings: 0,
           averageRating: 0
-        }) || { totalServices: 0, totalOrders: 0, totalEarnings: 0, averageRating: 0 };
+        }) || { totalServices: 0, totalEarnings: 0, averageRating: 0 };
 
         serviceStats.averageRating = serviceStats.totalServices > 0 
           ? serviceStats.averageRating / serviceStats.totalServices 
@@ -245,8 +242,12 @@ const ProviderDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => {
-                    setActiveTab(tab.id);
-                    setSidebarOpen(false); // Close mobile sidebar on selection
+                    if (tab.id === 'profile') {
+                      navigate('/settings');
+                    } else {
+                      setActiveTab(tab.id);
+                      setSidebarOpen(false); // Close mobile sidebar on selection
+                    }
                   }}
                   className={`
                     w-full flex items-center px-3 py-2.5 text-left rounded-lg transition-colors duration-150
@@ -398,19 +399,6 @@ const ProviderDashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <Users className="h-8 w-8 text-green-600" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
 
                 <Card>
                   <CardContent className="pt-6">
@@ -460,7 +448,7 @@ const ProviderDashboard = () => {
                     <Button 
                       variant="outline"
                       className="flex items-center justify-center gap-2"
-                      onClick={() => setActiveTab('profile')}
+                      onClick={() => navigate('/settings')}
                     >
                       <Settings className="h-4 w-4" />
                       Update Profile
@@ -509,16 +497,22 @@ const ProviderDashboard = () => {
                                   <Star className="h-4 w-4 text-yellow-400" />
                                   <span className="text-sm">{(service.rating?.average || 0).toFixed(1)}</span>
                                 </div>
-                                <span className="text-sm text-gray-600">
-                                  {service.totalOrders} orders
-                                </span>
+
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => navigate(`/services/${service.id}`)}
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setActiveTab('services')}
+                              >
                                 <Edit3 className="h-4 w-4" />
                               </Button>
                             </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../config/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,14 +31,15 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
     },
     category: '',
     tags: [],
+    enableServiceTerms: false,
     deliveryTime: '',
-    revisions: '1',
+    revisions: '0',
     requirements: []
   });
 
   const [inputValues, setInputValues] = useState({
-    tagInput: '',
-    requirementInput: ''
+    tags: '',
+    requirements: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -208,6 +210,10 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
         revisions: Number(formData.revisions)
       };
 
+      console.log('Creating service with data:', serviceData);
+      console.log('API URL:', `${API_BASE_URL}/services`);
+      console.log('Token:', token ? 'Present' : 'Missing');
+
       const response = await fetch(`${API_BASE_URL}/services`, {
         method: 'POST',
         headers: {
@@ -217,7 +223,11 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
         body: JSON.stringify(serviceData)
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to create service');
@@ -455,11 +465,34 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
 
           {/* Service Details */}
           <div className="space-y-4">
+            <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Service Terms
             </h3>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="enableServiceTerms"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  checked={formData.enableServiceTerms}
+                  onChange={(e) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      enableServiceTerms: e.target.checked,
+                      // Reset values when disabling
+                      deliveryTime: e.target.checked ? prev.deliveryTime : '',
+                      revisions: e.target.checked ? prev.revisions : '0'
+                    }));
+                  }}
+                />
+                <Label htmlFor="enableServiceTerms" className="cursor-pointer">
+                  Enable Service Terms
+                </Label>
+              </div>
+            </div>
             
+            {formData.enableServiceTerms && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="deliveryTime">Delivery Time</Label>
@@ -493,6 +526,7 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
                 />
               </div>
             </div>
+            )}
           </div>
 
           {/* Tags */}
@@ -505,8 +539,8 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input
-                  value={inputValues.tagInput}
-                  onChange={(e) => handleArrayInputChange('tag', e.target.value)}
+                  value={inputValues.tags}
+                  onChange={(e) => handleArrayInputChange('tags', e.target.value)}
                   onKeyPress={(e) => handleKeyPress(e, 'tags')}
                   placeholder="Add tags to help clients find your service"
                 />
@@ -548,8 +582,8 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input
-                  value={inputValues.requirementInput}
-                  onChange={(e) => handleArrayInputChange('requirement', e.target.value)}
+                  value={inputValues.requirements}
+                  onChange={(e) => handleArrayInputChange('requirements', e.target.value)}
                   onKeyPress={(e) => handleKeyPress(e, 'requirements')}
                   placeholder="e.g., Project brief, Brand guidelines, Content and images"
                 />

@@ -300,6 +300,15 @@ const UserSettings = () => {
         }
       }));
 
+      // Dispatch event to notify other components about location update
+      window.dispatchEvent(new CustomEvent('providerLocationUpdated', {
+        detail: {
+          providerId: providerData.id,
+          location: locationForm.address,
+          coordinates: locationForm.coordinates
+        }
+      }));
+
       showMessage('Location updated successfully', 'success');
 
     } catch (error) {

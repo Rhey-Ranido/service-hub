@@ -18,6 +18,87 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return Math.round(distance * 10) / 10; // Round to 1 decimal place
 };
 
+// GET top 3 services by review rating
+export const getTopRatedServices = async (req, res) => {
+  try {
+    // Get all services with their reviews
+    const services = await Service.find({ isActive: true })
+      .populate({
+        path: 'providerId',
+        select: 'name location.address rating isVerified userId status',
+        match: { status: 'approved' },
+        populate: {
+          path: 'userId',
+          select: 'profileImage firstName lastName',
+          model: 'User'
+        }
+      })
+      .lean();
+
+    // Filter out services where provider didn't match or isn't approved
+    const filteredServices = services.filter(service => service.providerId);
+
+    // Calculate real rating for each service
+    const servicesWithRatings = await Promise.all(filteredServices.map(async (service) => {
+      const serviceReviews = await ServiceReview.find({ serviceId: service._id });
+      const serviceRatingCount = serviceReviews.length;
+      const serviceRatingAverage = serviceRatingCount > 0 
+        ? serviceReviews.reduce((sum, review) => sum + review.rating, 0) / serviceRatingCount 
+        : 0;
+
+      const providerReviews = await ProviderReview.find({ providerId: service.providerId._id });
+      const providerRatingCount = providerReviews.length;
+      const providerRatingAverage = providerRatingCount > 0 
+        ? providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerRatingCount 
+        : 0;
+
+      const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
+      const imageUrls = service.images?.map(img => `${baseUrl}/${img}`) || [];
+      const userProfileImageUrl = service.providerId.userId?.profileImage 
+        ? `${baseUrl}/${service.providerId.userId.profileImage}` 
+        : null;
+
+      return {
+        id: service._id,
+        title: service.title,
+        description: service.shortDescription || service.description,
+        price: service.price.amount,
+        priceUnit: service.price.unit,
+        tags: service.tags,
+        category: service.category,
+        rating: {
+          average: serviceRatingAverage,
+          count: serviceRatingCount
+        },
+        images: service.images,
+        imageUrls: imageUrls,
+        provider: {
+          id: service.providerId.userId,
+          providerId: service.providerId._id,
+          name: service.providerId.name,
+          location: service.providerId.location.address,
+          rating: providerRatingAverage,
+          reviewCount: providerRatingCount,
+          isVerified: service.providerId.isVerified,
+          profileImage: service.providerId.userId?.profileImage,
+          profileImageUrl: userProfileImageUrl
+        },
+        createdAt: service.createdAt,
+        ratingScore: serviceRatingAverage * Math.log10(serviceRatingCount + 1) // Weight by number of reviews
+      };
+    }));
+
+    // Sort by rating score and get top 3
+    const topServices = servicesWithRatings
+      .sort((a, b) => b.ratingScore - a.ratingScore)
+      .slice(0, 3);
+
+    res.status(200).json(topServices);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 // GET all services with advanced filtering and search
 export const getAllServices = async (req, res) => {
   try {
@@ -443,6 +524,7 @@ export const getServiceById = async (req, res) => {
         profileImage: service.providerId.userId?.profileImage,
         profileImageUrl: userProfileImageUrl,
         location: service.providerId.location.address,
+        coordinates: service.providerId.location?.coordinates,
         rating: {
           average: providerRatingAverage,
           count: providerRatingCount

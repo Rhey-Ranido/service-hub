@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { API_BASE_URL } from '../config/api';
 import { 
   Image as ImageIcon, 
   Trash2, 

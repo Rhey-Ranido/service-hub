@@ -52,37 +52,35 @@ export default function Home() {
       setLoading(true);
       setError('');
       
-      // Fetch featured services from the backend
-      const response = await fetch(`${API_BASE_URL}/services?featured=true&limit=3`);
+      // Fetch top rated services from the backend
+      const response = await fetch(`${API_BASE_URL}/services/top-rated`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch featured services');
+        throw new Error('Failed to fetch top rated services');
       }
       
       const data = await response.json();
-      console.log('Featured services:', data);
+      console.log('Top rated services:', data);
       
-      // Log the featured services to see the data structure
-      console.log('🏠 Home page - Featured services data:');
-      if (data.services && data.services.length > 0) {
-        data.services.forEach((service, index) => {
-          console.log(`Featured Service ${index + 1}: "${service.title}"`);
+      // Log the top rated services to see the data structure
+      console.log('🏠 Home page - Top rated services data:');
+      if (data.length > 0) {
+        data.forEach((service, index) => {
+          console.log(`Top Rated Service ${index + 1}: "${service.title}"`);
           console.log(`  - Provider: ${service.provider?.name}`);
+          console.log(`  - Rating: ${service.rating?.average} (${service.rating?.count} reviews)`);
           console.log(`  - Provider ID: ${service.provider?.id}`);
-          console.log(`  - Profile Image: ${service.provider?.profileImage}`);
-          console.log(`  - Profile Image URL: ${service.provider?.profileImageUrl}`);
-          console.log(`  - Has Profile Image: ${!!service.provider?.profileImageUrl}`);
           console.log('  ---');
         });
       } else {
-        console.log('No featured services found');
+        console.log('No top rated services found');
       }
       
       // Use the services directly from the backend
-      setFeaturedServices(data.services || []);
+      setFeaturedServices(data || []);
     } catch (err) {
-      console.error('Error fetching featured services:', err);
-      setError('Failed to load featured services');
+      console.error('Error fetching top rated services:', err);
+      setError('Failed to load top rated services');
     } finally {
       setLoading(false);
     }
@@ -171,23 +169,7 @@ export default function Home() {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
-              <Button 
-                size="lg" 
-                className="text-base sm:text-lg px-6 sm:px-8 py-3 w-full sm:w-auto"
-                onClick={() => navigate("/services")}
-              >
-                Browse All Services
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="text-base sm:text-lg px-6 sm:px-8 py-3 w-full sm:w-auto"
-                onClick={() => navigate("/register")}
-              >
-                Become a Provider
-              </Button>
-            </div>
+
           </div>
         </div>
       </section>
@@ -196,9 +178,9 @@ export default function Home() {
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">Featured Services</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">Top Rated Services</h2>
             <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
-              Discover top-rated services from our verified providers. Quality guaranteed, satisfaction assured.
+              Our highest rated services with proven track records of customer satisfaction.
             </p>
             <Button 
                 variant="outline" 

@@ -69,23 +69,28 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
 
     try {
       const token = localStorage.getItem('token');
+      console.log('Deleting service:', serviceId);
+      console.log('API URL:', `${API_BASE_URL}/services/${serviceId}`);
+      
       const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
+
+      console.log('Delete response status:', response.status);
 
       if (response.ok) {
         onRefresh?.();
         alert('Service deleted successfully');
       } else {
-        throw new Error('Failed to delete service');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete service');
       }
     } catch (error) {
       console.error('Error deleting service:', error);
-      alert('Failed to delete service');
+      alert(error.message || 'Failed to delete service');
     }
   };
 
@@ -214,12 +219,7 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
               </div>
               <div className="text-sm text-gray-600">Active Services</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {filteredServices.reduce((sum, s) => sum + s.totalOrders, 0)}
-              </div>
-              <div className="text-sm text-gray-600">Total Orders</div>
-            </div>
+
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">
                 {filteredServices.length > 0 
@@ -314,7 +314,7 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-2 gap-3 text-center">
                 <div>
                   <div className="flex items-center justify-center gap-1">
                     <Star className="h-4 w-4 text-yellow-400" />
@@ -324,13 +324,7 @@ const ServiceManagement = ({ services, onRefresh, onCreateService }) => {
                   </div>
                   <div className="text-xs text-gray-500">Rating</div>
                 </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1">
-                    <Users className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm font-medium">{service.totalOrders}</span>
-                  </div>
-                  <div className="text-xs text-gray-500">Orders</div>
-                </div>
+
                 <div>
                   <div className="flex items-center justify-center gap-1">
                     <Eye className="h-4 w-4 text-green-500" />

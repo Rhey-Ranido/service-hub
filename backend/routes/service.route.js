@@ -7,6 +7,7 @@ import {
   deleteService,
   getAllServicesByProviderId,
   getMyServices,
+  getTopRatedServices,
 } from "../controllers/service.controller.js";
 
 import { protect, restrictTo } from "../middlewares/auth.middleware.js";
@@ -14,6 +15,7 @@ import { protect, restrictTo } from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
 // Public routes
+router.get("/top-rated", getTopRatedServices); // Get top 3 services by rating
 router.get("/", getAllServices); // Now supports advanced filtering and search
 router.get("/by-provider/:providerId", getAllServicesByProviderId);
 router.get("/:id", getServiceById); // Now includes view tracking and detailed info
