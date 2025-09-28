@@ -29,14 +29,31 @@ dotenv.config();
 const app = express();
 
 // CORS configuration - allow frontend to access backend
-app.use(cors({
-  origin: [
+const getAllowedOrigins = () => {
+  const origins = [
     "http://localhost:5173", 
     "http://localhost:3000", 
     "http://127.0.0.1:5173",
     "http://192.168.1.17:5173",  // Allow access from network IP
     "http://192.168.1.17:3000"   // Allow access from network IP
-  ],
+  ];
+  
+  // Add production origins from environment variables
+  if (process.env.ALLOWED_ORIGINS) {
+    const envOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
+    origins.push(...envOrigins);
+  }
+  
+  // Add Vercel frontend URL if provided
+  if (process.env.VERCEL_FRONTEND_URL) {
+    origins.push(process.env.VERCEL_FRONTEND_URL);
+  }
+  
+  return origins;
+};
+
+app.use(cors({
+  origin: getAllowedOrigins(),
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]

@@ -1,6 +1,18 @@
 // API Configuration
-// Automatically detect if we're running on localhost or network IP
+// Centralized configuration for all environments
+
 const getApiBaseUrl = () => {
+  // Check for environment variable first (for production deployments)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Check for Render backend URL
+  if (import.meta.env.VITE_RENDER_BACKEND_URL) {
+    return `${import.meta.env.VITE_RENDER_BACKEND_URL}/api`;
+  }
+  
+  // Development environment detection
   const hostname = window.location.hostname;
   
   // If accessing via network IP, use network IP for API calls
@@ -13,6 +25,17 @@ const getApiBaseUrl = () => {
 };
 
 const getSocketUrl = () => {
+  // Check for environment variable first (for production deployments)
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+  
+  // Check for Render backend URL
+  if (import.meta.env.VITE_RENDER_BACKEND_URL) {
+    return import.meta.env.VITE_RENDER_BACKEND_URL;
+  }
+  
+  // Development environment detection
   const hostname = window.location.hostname;
   
   // If accessing via network IP, use network IP for socket connection
@@ -31,3 +54,4 @@ export const SOCKET_URL = getSocketUrl();
 console.log('🌐 API Base URL:', API_BASE_URL);
 console.log('🔌 Socket URL:', SOCKET_URL);
 console.log('🖥️ Current hostname:', window.location.hostname);
+console.log('🔧 Environment:', import.meta.env.MODE);
