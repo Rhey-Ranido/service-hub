@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ImageUpload from '@/components/ui/ImageUpload';
 import { 
   Briefcase, 
-  DollarSign, 
   Tag, 
   Clock, 
   RotateCcw,
@@ -402,8 +401,7 @@ const ServiceCreationForm = ({ onSuccess, onSkip, onClose }) => {
 
           {/* Pricing and Category */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+            <h3 className="text-lg font-semibold">
               Pricing & Category
             </h3>
             
