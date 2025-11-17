@@ -8,6 +8,7 @@
     "start": "node server.js",
     "dev": "npx nodemon server.js",
     "seed": "node scripts/seedData.js",
+    "seed:simple": "node scripts/seedSimple.js",
     "update-ratings": "node scripts/updateRatings.js",
     "build": "echo 'No build step required for Node.js'",
     "render-postbuild": "echo 'Post-build script for Render'"

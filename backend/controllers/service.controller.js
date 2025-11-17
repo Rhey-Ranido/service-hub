@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Service from "../models/Service.js";
 import Provider from "../models/Provider.js";
+import User from "../models/User.js";
 import ServiceReview from "../models/ServiceReview.js";
 import ProviderReview from "../models/ProviderReview.js";
 
@@ -565,6 +566,17 @@ export const getServiceById = async (req, res) => {
 // CREATE a new service (provider only)
 export const createService = async (req, res) => {
   try {
+    // Check if user account is active
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const accountStatus = user.status || 'active';
+    if (accountStatus !== 'active') {
+      return res.status(403).json({ message: `Your account is ${accountStatus}. You cannot create services.` });
+    }
+
     // Verify user is a provider and is approved
     const provider = await Provider.findOne({ userId: req.user.id });
     if (!provider) {
@@ -618,6 +630,14 @@ export const updateService = async (req, res) => {
       return res.status(400).json({ message: "Invalid service ID" });
     }
 
+    // Check if user account is active (unless admin)
+    if (req.user.role !== "admin") {
+      const user = await User.findById(req.user.id);
+      if (!user || user.status !== 'active') {
+        return res.status(403).json({ message: `Your account is ${user?.status || 'inactive'}. You cannot update services.` });
+      }
+    }
+
     const service = await Service.findById(id);
     if (!service) return res.status(404).json({ message: "Service not found" });
 
@@ -647,6 +667,14 @@ export const deleteService = async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid service ID" });
+    }
+
+    // Check if user account is active (unless admin)
+    if (req.user.role !== "admin") {
+      const user = await User.findById(req.user.id);
+      if (!user || user.status !== 'active') {
+        return res.status(403).json({ message: `Your account is ${user?.status || 'inactive'}. You cannot delete services.` });
+      }
     }
 
     const service = await Service.findById(id);

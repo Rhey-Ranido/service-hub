@@ -1,0 +1,72 @@
+Website User Manual (Simple Text)
+
+1) Home / Landing
+- What you see: Overview, navigation to search services or sign in.
+- What to do: Click "Services" or use the search bar to find providers.
+
+2) Service Search
+- What you see: A list/grid of services with filters (category, location, etc.).
+- What to do:
+  - Type a keyword and/or set your location filters.
+  - Click a service card to view its details.
+
+3) Service Details
+- What you see: Service description, images, pricing, location, reviews.
+- What to do:
+  - Read details and browse images.
+  - If you want to contact the provider or leave a review, you’ll need to log in or sign up.
+
+4) Login / Signup
+- What you see: Forms to sign in or create an account.
+- What to do:
+  - New user: Fill in the signup form and submit.
+  - Returning user: Enter your credentials and sign in.
+- After success: You’ll be redirected to your Dashboard.
+
+5) Dashboard
+- What you see: Overview of your account, shortcuts to key actions.
+- What to do:
+  - Post a new service (for providers).
+  - Open messages to chat with other users/providers.
+  - Go to profile/settings to update your info.
+
+6) Post Service (Providers)
+- What you see: A form to create a new service.
+- What to do:
+  - Fill in title, description, category, pricing, location.
+  - Upload one or more images.
+  - Submit to publish the service.
+
+7) Manage Services (Providers)
+- What you see: List of your services with options to edit or update images.
+- What to do:
+  - Edit service details or update images.
+  - Change service availability/status as needed.
+
+8) Messages
+- What you see: Your conversations with other users/providers.
+- What to do:
+  - Open a conversation to read and reply.
+  - Start a new conversation from a service details page (requires login).
+
+9) Profile / Settings
+- What you see: Your profile information and account settings.
+- What to do:
+  - Update name, contact info, and profile image.
+  - Adjust preferences (e.g., dark mode if available).
+  - Save changes to keep your profile up to date.
+
+10) Logout
+- What you see: A simple action to sign out.
+- What to do:
+  - Click "Logout" from the navigation or settings.
+  - You’ll return to the Home/Landing page.
+
+Quick Tips
+- You can browse and read service details without logging in.
+- You must log in to message providers, post services, and manage your listings.
+- Use filters in Service Search to quickly narrow results (e.g., by location or category).
+- Keep your profile up to date for better trust and visibility.
+
+Where to Access This Manual
+- Open /user-manual.txt directly from the site (e.g., http://localhost:5173/user-manual.txt during local development).

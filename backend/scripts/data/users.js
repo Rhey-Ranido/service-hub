@@ -12,100 +12,59 @@ import bcrypt from 'bcryptjs';
 export const generateUsers = async () => {
   const users = [
     {
-      email: 'jerson.caibog@example.com',
+      email: 'franz.graphics@example.com',
       password: await bcrypt.hash('password123', 12),
       role: 'provider',
-      firstName: 'Jerson',
-      lastName: 'Caibog',
-      profileImage: 'profiles/IMG_20230723_194132-1754998212749-962197956.jpg',
+      firstName: 'Franz',
+      lastName: 'Graphics',
       isVerified: true
     },
     {
-      email: 'ivan.yakit@example.com',
+      email: 'autopilot.carspa@example.com',
       password: await bcrypt.hash('password123', 12),
       role: 'provider',
-      firstName: 'Ivan',
-      lastName: 'Yakit',
-      profileImage: 'profiles/vitanitas-1753919330058-890385048.jpg',
+      firstName: 'Autopilot',
+      lastName: 'Car Spa',
       isVerified: true
     },
     {
-      email: 'aina.oprin@example.com',
+      email: 'd.graphics@example.com',
       password: await bcrypt.hash('password123', 12),
       role: 'provider',
-      firstName: 'Aina',
-      lastName: 'Oprin',
-      profileImage: 'profiles/heroImage-1753531824758-508842195.jpg',
+      firstName: 'D.',
+      lastName: 'Graphics',
       isVerified: true
     },
     {
-      email: 'jemerson.daganio@example.com',
+      email: 'ka.laundry@example.com',
       password: await bcrypt.hash('password123', 12),
       role: 'provider',
-      firstName: 'Jemerson',
-      lastName: 'Daganio',
-      profileImage: 'profiles/heroImage-1753234516939-132793031.jpg',
+      firstName: 'K&A',
+      lastName: 'Laundry Shop',
       isVerified: true
     },
     {
-      email: 'rhey.ranido@example.com',
+      email: 'duptours@example.com',
       password: await bcrypt.hash('password123', 12),
       role: 'provider',
-      firstName: 'Rhey',
-      lastName: 'Ranido',
-      profileImage: 'profiles/IMG_20230723_194132-1754998212749-962197956.jpg',
+      firstName: 'Duptours',
+      lastName: 'Transport',
       isVerified: true
     },
     {
-      email: 'marvin.opriassa@example.com',
+      email: 'footprint.graphic@example.com',
       password: await bcrypt.hash('password123', 12),
       role: 'provider',
-      firstName: 'Marvin',
-      lastName: 'Opriassa',
-      profileImage: 'profiles/vitanitas-1753919330058-890385048.jpg',
+      firstName: 'Foot Print',
+      lastName: 'Graphic',
       isVerified: true
     },
     {
-      email: 'beatriz.dadula@example.com',
-      password: await bcrypt.hash('password123', 12),
-      role: 'provider',
-      firstName: 'Beatriz Jane',
-      lastName: 'Dadula',
-      profileImage: 'profiles/heroImage-1753531824758-508842195.jpg',
-      isVerified: true
-    },
-    {
-      email: 'fritz.delacruz@example.com',
-      password: await bcrypt.hash('password123', 12),
-      role: 'provider',
-      firstName: 'Fritz Kirby',
-      lastName: 'Delacruz',
-      profileImage: 'profiles/vitanitas-1753919330058-890385048.jpg',
-      isVerified: true
-    },
-    {
-      email: 'alvin.alvarez@example.com',
-      password: await bcrypt.hash('password123', 12),
-      role: 'provider',
-      firstName: 'Alvin',
-      lastName: 'Alvarez',
-      profileImage: 'profiles/heroImage-1753234516939-132793031.jpg',
-      isVerified: true
-    },
-    {
-      email: 'client@example.com',
-      password: await bcrypt.hash('password123', 12),
-      role: 'client',
-      firstName: 'Test',
-      lastName: 'Client',
-      isVerified: true
-    },
-    {
-      email: 'admin@example.com',
-      password: await bcrypt.hash('password123', 12),
+      email: 'admin@admin.com',
+      password: await bcrypt.hash('admin123', 12),
       role: 'admin',
-      firstName: 'Admin',
-      lastName: 'User',
+      firstName: 'admin',
+      lastName: 'admin',
       isVerified: true
     }
   ];

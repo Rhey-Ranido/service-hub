@@ -55,3 +55,7 @@ console.log('🌐 API Base URL:', API_BASE_URL);
 console.log('🔌 Socket URL:', SOCKET_URL);
 console.log('🖥️ Current hostname:', window.location.hostname);
 console.log('🔧 Environment:', import.meta.env.MODE);
+console.log('🔍 Environment Variables:');
+console.log('  - VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
+console.log('  - VITE_RENDER_BACKEND_URL:', import.meta.env.VITE_RENDER_BACKEND_URL);
+console.log('  - VITE_SOCKET_URL:', import.meta.env.VITE_SOCKET_URL);

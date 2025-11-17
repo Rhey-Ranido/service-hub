@@ -5,6 +5,9 @@ import {
   updateProviderStatus,
   getAdminDashboardStats,
   deleteProviderByAdmin,
+  getAllUsersForAdmin,
+  updateUserStatus,
+  updateUserVerification,
 } from "../controllers/admin.controller.js";
 import { protect, restrictTo } from "../middlewares/auth.middleware.js";
 
@@ -22,5 +25,10 @@ router.get("/providers", getAllProvidersForAdmin);
 router.get("/providers/:id", getProviderDetailsForAdmin);
 router.patch("/providers/:id/status", updateProviderStatus);
 router.delete("/providers/:id", deleteProviderByAdmin);
+
+// User management
+router.get("/users", getAllUsersForAdmin);
+router.patch("/users/:id/status", updateUserStatus);
+router.patch("/users/:id/verification", updateUserVerification);
 
 export default router; 

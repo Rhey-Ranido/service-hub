@@ -312,4 +312,225 @@ export const deleteProviderByAdmin = async (req, res) => {
     console.error("Error deleting provider:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
+};
+
+// Get all users for admin management
+export const getAllUsersForAdmin = async (req, res) => {
+  try {
+    const {
+      status,
+      role,
+      search,
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build filter object
+    const filter = {};
+    
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+
+    if (role && role !== 'all') {
+      filter.role = role;
+    }
+
+    if (search) {
+      filter.$or = [
+        { email: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Build sort object
+    const sortObj = {};
+    sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    const users = await User.find(filter)
+      .select('-password')
+      .sort(sortObj)
+      .skip(skip)
+      .limit(Number(limit))
+      .lean();
+
+    const totalUsers = await User.countDocuments(filter);
+
+    // Check if users are providers
+    const userIds = users.map(u => u._id);
+    const providers = await Provider.find({ userId: { $in: userIds } })
+      .select('userId status _id')
+      .lean();
+
+    const providerStatusMap = new Map(providers.map(p => [p.userId.toString(), p.status]));
+    const providerIdMap = new Map(providers.map(p => [p.userId.toString(), p._id.toString()]));
+
+    // Format response
+    const formattedUsers = users.map(user => ({
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      status: user.status || 'active',
+      isVerified: user.isVerified,
+      profileImage: user.profileImage,
+      profileImageUrl: user.profileImage ? `${req.protocol}://${req.get('host')}/uploads/${user.profileImage}` : null,
+      phone: user.phone,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      lastActive: user.lastActive,
+      statusUpdatedAt: user.statusUpdatedAt,
+      providerStatus: providerStatusMap.get(user._id.toString()) || null,
+      providerId: providerIdMap.get(user._id.toString()) || null
+    }));
+
+    res.status(200).json({
+      users: formattedUsers,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalUsers / limit),
+        totalUsers,
+        hasNextPage: page * limit < totalUsers,
+        hasPrevPage: page > 1
+      }
+    });
+  } catch (error) {
+    console.error("Error getting users for admin:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Update user status (admin only)
+export const updateUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'suspended', 'banned'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status. Must be 'active', 'suspended', or 'banned'" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Don't allow changing admin status
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: "Cannot change status of admin users" });
+    }
+
+    // Update user status
+    user.status = status;
+    user.statusUpdatedAt = new Date();
+    await user.save();
+
+    // If user is banned or suspended, also suspend their provider account if they have one
+    if (status === 'banned' || status === 'suspended') {
+      const provider = await Provider.findOne({ userId: id });
+      if (provider && provider.status !== 'suspended') {
+        provider.status = 'suspended';
+        provider.statusUpdatedAt = new Date();
+        await provider.save();
+      }
+    }
+
+    // Remove password from response
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    res.status(200).json({
+      message: `User status updated to ${status} successfully`,
+      user: userObj
+    });
+  } catch (error) {
+    console.error("Error updating user status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Update user verification status (admin only)
+export const updateUserVerification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isVerified } = req.body;
+
+    if (typeof isVerified !== 'boolean') {
+      return res.status(400).json({ message: "Invalid verification status. Must be a boolean value" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Don't allow changing admin verification
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: "Cannot change verification status of admin users" });
+    }
+
+    // Update user verification status
+    user.isVerified = isVerified;
+    await user.save();
+
+    // If user has provider role, ensure provider record exists and matches verification state
+    if (user.role === 'provider') {
+      let providerRecord = await Provider.findOne({ userId: user._id });
+
+      if (isVerified && !providerRecord) {
+        // Generate provider name from user data
+        let providerName = '';
+        if (user.firstName && user.lastName) {
+          providerName = `${user.firstName} ${user.lastName}`;
+        } else if (user.firstName) {
+          providerName = user.firstName;
+        } else if (user.lastName) {
+          providerName = user.lastName;
+        } else {
+          // Use email username as fallback
+          providerName = user.email.split('@')[0];
+        }
+
+        // Create provider with default values
+        providerRecord = await Provider.create({
+          userId: user._id,
+          name: providerName,
+          location: {
+            address: "Location not set - Please update your profile",
+            type: "Point",
+            coordinates: [0, 0] // Default coordinates
+          },
+          status: "pending", // Provider needs to be approved separately
+          languages: ['English'],
+          responseTime: "within 24 hours"
+        });
+
+        console.log(`Provider record created for user ${user._id} during verification`);
+      }
+
+      if (providerRecord) {
+        providerRecord.isVerified = isVerified;
+        await providerRecord.save();
+      }
+    }
+
+    // Remove password from response
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    res.status(200).json({
+      message: `User verification status updated to ${isVerified ? 'verified' : 'unverified'} successfully`,
+      user: userObj
+    });
+  } catch (error) {
+    console.error("Error updating user verification:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 }; 

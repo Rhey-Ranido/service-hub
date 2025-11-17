@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROJECT TIMETABLE (Gantt Chart)</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --card: #f8fafc;
+        --grid: #e2e8f0;
+        --stroke: #cbd5e1;
+        --text: #1e293b;
+        --muted: #64748b;
+        --active: #3b82f6;
+        --active-weak: rgba(59, 130, 246, 0.1);
+        --header-bg: #f1f5f9;
+        --hover: rgba(59, 130, 246, 0.05);
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial;
+      }
+
+      header {
+        padding: 20px 16px 8px;
+        text-align: center;
+        border-bottom: 2px solid var(--stroke);
+        background: linear-gradient(
+          180deg,
+          rgba(59, 130, 246, 0.05),
+          rgba(59, 130, 246, 0.02)
+        );
+      }
+
+      header h1 {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        color: var(--text);
+      }
+
+      header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      main {
+        padding: 18px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 1100px;
+        background: var(--card);
+        border: 2px solid var(--stroke);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-bottom: 2px solid var(--stroke);
+        color: var(--muted);
+        font-size: 13px;
+        background: var(--header-bg);
+      }
+
+      .grid-container {
+        width: 100%;
+        overflow: auto;
+      }
+
+      table.gantt {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .gantt th,
+      .gantt td {
+        border: 1px solid var(--grid);
+        padding: 12px 16px;
+        text-align: center;
+        font-size: 13px;
+        position: relative;
+        background: var(--card);
+        min-width: 80px;
+        height: 50px;
+      }
+
+      .gantt th {
+        background: var(--header-bg);
+        font-weight: 600;
+      }
+
+      .col-activity {
+        text-align: left;
+        min-width: 220px;
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: var(--header-bg);
+        font-weight: 600;
+      }
+
+      .month {
+        color: var(--text);
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .week {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .cell.active {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        border: 1px solid #1d4ed8;
+      }
+
+      .cell:hover {
+        background: var(--hover);
+      }
+
+      .cell.active:hover {
+        background: linear-gradient(135deg, #2563eb, #1e40af);
+        transform: scale(1.02);
+        transition: all 0.2s ease;
+      }
+
+      .legend {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border: 1px solid var(--stroke);
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>PROJECT TIMETABLE (Gantt Chart)</h1>
+      <p>Configure months, activities, and timeline in the script below.</p>
+    </header>
+
+    <main>
+      <section class="card" role="group" aria-label="Gantt Chart">
+        <div class="toolbar">
+          <div class="legend">
+            <span class="pill"><span class="swatch"></span> Active period</span>
+          </div>
+          <div>Editable via JS config</div>
+        </div>
+        <div class="grid-container">
+          <table class="gantt" id="gantt"></table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // Configuration: edit this object to update the chart
+      const CONFIG = {
+        months: [
+          { name: "March", weeks: 4 },
+          { name: "April", weeks: 4 },
+          { name: "May", weeks: 4 },
+          { name: "June", weeks: 4 },
+          { name: "July", weeks: 4 },
+          { name: "August", weeks: 4 },
+          { name: "September", weeks: 4 },
+        ],
+        activities: [
+          "System Planning",
+          "Designing",
+          "Coding",
+          "Debugging",
+          "Device Assembly",
+          "Interface",
+          "Testing",
+          "Deployment",
+          "Pilot Test",
+          "Final Test",
+          "Final Defense",
+        ],
+        // Map each activity to an array of active ranges
+        // Each range: { month: 'March', weeks: [1,2,3,4] } or subset like [2,3]
+        timeline: {
+          "System Planning": [{ month: "March", weeks: [1, 2] }],
+          Designing: [{ month: "March", weeks: [2, 3, 4] }],
+          Coding: [
+            { month: "March", weeks: [3, 4] },
+            { month: "April", weeks: [1, 2, 3, 4] },
+            { month: "May", weeks: [1,2,3, 4] },
+            { month: "June", weeks: [1,2,3, 4] },
+            { month: "July", weeks: [1,2] },
+          ],
+          Debugging: [{ month: "May", weeks: [1, 2, 3] }],
+          "Device Assembly": [
+            { month: "May", weeks: [3, 4] },
+            { month: "June", weeks: [1] },
+          ],
+          Interface: [{ month: "June", weeks: [2, 3, 4] }],
+          Testing: [{ month: "July", weeks: [1, 2, 3] }],
+          Deployment: [
+            { month: "July", weeks: [3, 4] },
+            { month: "August", weeks: [1, 2] },
+          ],
+          "Pilot Test": [{ month: "August", weeks: [3] }],
+          "Final Test": [{ month: "August", weeks: [4] }],
+          "Final Defense": [{ month: "September", weeks: [1] }],
+        },
+      };
+
+      function buildGantt(containerId, config) {
+        const table = document.getElementById(containerId);
+        if (!table) return;
+
+        // Clear existing
+        table.innerHTML = "";
+
+        // Build header rows
+        const headerMonths = document.createElement("tr");
+        const headerWeeks = document.createElement("tr");
+
+        // First sticky Activity header cell
+        const thActivity = document.createElement("th");
+        thActivity.className = "col-activity";
+        thActivity.textContent = "Activities";
+        thActivity.rowSpan = 2;
+        headerMonths.appendChild(thActivity);
+
+        // Month headers with colspans
+        config.months.forEach((m) => {
+          const th = document.createElement("th");
+          th.className = "month";
+          th.colSpan = m.weeks;
+          th.textContent = m.name;
+          headerMonths.appendChild(th);
+
+          for (let w = 1; w <= m.weeks; w++) {
+            const thw = document.createElement("th");
+            thw.className = "week";
+            thw.textContent = String(w);
+            headerWeeks.appendChild(thw);
+          }
+        });
+
+        table.appendChild(headerMonths);
+        table.appendChild(headerWeeks);
+
+        // Fast lookup for active cells
+        const isActive = new Map();
+        Object.entries(config.timeline || {}).forEach(([activity, ranges]) => {
+          ranges.forEach((r) => {
+            const weeks = Array.isArray(r.weeks) ? r.weeks : [];
+            weeks.forEach((week) => {
+              isActive.set(`${activity}__${r.month}__${week}`, true);
+            });
+          });
+        });
+
+        // Body rows
+        config.activities.forEach((activityName) => {
+          const tr = document.createElement("tr");
+
+          const tdLabel = document.createElement("td");
+          tdLabel.className = "col-activity";
+          tdLabel.textContent = activityName;
+          tr.appendChild(tdLabel);
+
+          config.months.forEach((m) => {
+            for (let w = 1; w <= m.weeks; w++) {
+              const td = document.createElement("td");
+              td.className = "cell";
+              if (isActive.get(`${activityName}__${m.name}__${w}`)) {
+                td.classList.add("active");
+              }
+              tr.appendChild(td);
+            }
+          });
+
+          table.appendChild(tr);
+        });
+      }
+
+      // Build on load
+      buildGantt("gantt", CONFIG);
+    </script>
+  </body>
+</html>
